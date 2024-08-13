@@ -191,6 +191,25 @@ class Layout:
             return list(zip(start_nodes, end_nodes))
         return end_nodes
 
+    def get_coords(self, qubits: List[str]) -> List[List[float | int]]:
+        """Returns the coordinates of the given qubits. 
+
+        Parameters
+        ----------
+        qubits
+            Qubit or list of qubits. 
+
+        Returns
+        -------
+        Coordinates of the given qubits. 
+        """
+        all_coords = nx.get_node_attributes(self.graph, "coords")
+
+        if set(all_coords) < set(qubits):
+            raise ValueError("No coordinates defined for all the qubits, use 'set_coords'.")
+
+        return [all_coords[q] for q in qubits]
+
     def index_qubits(self) -> Layout:
         """index_qubits Returns a copy of the layout, where the qubits are indexed by integers."""
         indexed_layout = copy(self)

@@ -2,10 +2,12 @@
 from collections import deque
 from itertools import count
 
+import networkx as nx
+
 from .layout import Layout
 
 
-def set_coords(layout: Layout) -> None:
+def set_coords(layout: Layout, override: bool = False) -> None:
     """
     set_coords Sets the coordinates of the nodes in the layout.
 
@@ -14,6 +16,8 @@ def set_coords(layout: Layout) -> None:
     layout : Layout
         The layout to set the coordinates of.
     """
+    if (not override) and (nx.get_node_attributes(layout.graph, "coords") != {}):
+        raise ValueError("'layout' already has coordinates, use 'override' flag.")
 
     # Get the shift in the coordinate for a given direction.
     def get_shift(direction: str) -> int:
