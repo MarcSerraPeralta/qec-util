@@ -1,4 +1,5 @@
 """Layout plotting module."""
+
 import re
 from typing import Sequence, Union, Tuple, Reversible, Iterable
 from copy import deepcopy
