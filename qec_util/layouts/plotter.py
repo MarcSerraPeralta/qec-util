@@ -1,4 +1,5 @@
 """Layout plotting module."""
+
 import re
 from typing import Sequence, Union, Tuple, Reversible, Iterable
 from copy import deepcopy
@@ -173,7 +174,9 @@ def qubit_connections(layout: Layout) -> Iterable[Line2D]:
         anc_coords = invert(layout.param("coords", anc_qubit))
 
         metaparams = layout.param("metaparams", anc_qubit)
-        line_params = metaparams.get("line")
+        line_params = None
+        if metaparams is not None:
+            line_params = metaparams.get("line")
 
         neighbors = layout.get_neighbors(anc_qubit)
         for nbr in neighbors:
@@ -198,19 +201,22 @@ def qubit_artists(layout: Layout) -> Iterable[Circle]:
         The layout to draw the qubits of.
     """
     qubits = layout.get_qubits()
+    default_radius = 0.3
 
     for qubit in qubits:
         coords = invert(layout.param("coords", qubit))
 
         metaparams = layout.param("metaparams", qubit)
-        circle_params = metaparams.get("circle")
+        circle_params = None
+        if metaparams is not None:
+            circle_params = metaparams.get("circle")
 
         if circle_params is not None:
             params_copy = deepcopy(circle_params)
-            radius = params_copy.pop("radius", 0.3)
+            radius = params_copy.pop("radius", default_radious)
             yield get_circle(coords, radius, **params_copy)
         else:
-            yield get_circle(coords, radius)
+            yield get_circle(coords, default_radius)
 
 
 def patch_artists(layout: Layout) -> Iterable[Polygon]:

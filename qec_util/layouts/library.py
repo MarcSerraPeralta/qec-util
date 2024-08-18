@@ -1,4 +1,5 @@
 """Module implementing layout generator for the surface code."""
+
 from collections import defaultdict
 from functools import partial
 from itertools import count, cycle, product

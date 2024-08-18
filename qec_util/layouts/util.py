@@ -1,4 +1,5 @@
 """Module that implement some utility functions."""
+
 from collections import deque
 from itertools import count
 

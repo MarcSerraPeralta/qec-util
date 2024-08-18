@@ -61,7 +61,7 @@ class LogicalFidelityDecay(lmfit.model.Model):
         params: lmfit.parameter.Parameters,
         x: np.ndarray = None,
         min_qec: int = 0,
-        **kws
+        **kws,
     ):
         """
         Parameters

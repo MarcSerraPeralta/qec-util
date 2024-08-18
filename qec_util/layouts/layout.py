@@ -1,4 +1,5 @@
 """Module that implement the layout class."""
+
 from __future__ import annotations
 
 from copy import copy, deepcopy
@@ -196,21 +197,23 @@ class Layout:
         return end_nodes
 
     def get_coords(self, qubits: List[str]) -> List[List[float | int]]:
-        """Returns the coordinates of the given qubits. 
+        """Returns the coordinates of the given qubits.
 
         Parameters
         ----------
         qubits
-            Qubit or list of qubits. 
+            Qubit or list of qubits.
 
         Returns
         -------
-        Coordinates of the given qubits. 
+        Coordinates of the given qubits.
         """
         all_coords = nx.get_node_attributes(self.graph, "coords")
 
         if set(all_coords) < set(qubits):
-            raise ValueError("No coordinates defined for all the qubits, use 'set_coords'.")
+            raise ValueError(
+                "No coordinates defined for all the qubits, use 'set_coords'."
+            )
 
         return [all_coords[q] for q in qubits]
 
@@ -382,7 +385,11 @@ class Layout:
         Any
             The value of the parameter
         """
-        return self.graph.nodes[qubit][param]
+        try:
+            param = self.graph.nodes[qubit][param]
+        except KeyError:
+            param = None
+        return param
 
     def set_param(self, param: str, qubit: str, value: Any) -> None:
         """
