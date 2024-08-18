@@ -385,7 +385,11 @@ class Layout:
         Any
             The value of the parameter
         """
-        return self.graph.nodes[qubit][param]
+        try:
+            param = self.graph.nodes[qubit][param]
+        except KeyError:
+            param = None
+        return param
 
     def set_param(self, param: str, qubit: str, value: Any) -> None:
         """
