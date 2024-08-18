@@ -8,11 +8,11 @@ name = "qec-util"
 description = "Useful tools for QEC simulation" 
 version = "0.1.0"
 authors = [
-    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" }
-    { name = "Boris Varbanov", email = "b.m.varbanov@gmail.com"}
+    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" },
+    { name = "Boris Varbanov", email = "b.m.varbanov@gmail.com"},
 ]
 maintainers = [
-    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" }
+    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" },
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
