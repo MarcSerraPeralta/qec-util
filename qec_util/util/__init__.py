@@ -1,3 +1,3 @@
-from . import analysis, syndrome
+from . import syndrome
 
-__all__ = ["analysis", "syndrome"]
+__all__ = ["syndrome"]
