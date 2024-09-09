@@ -3,7 +3,7 @@ import time
 import stim
 from pymatching import Matching
 
-from qec_util.performance import sampler
+from qec_util.performance import sample_failures
 
 
 def test_sampler():
@@ -17,7 +17,7 @@ def test_sampler():
     mwpm = Matching(dem)
 
     t_init = time.time()
-    num_failures, num_samples = sampler(
+    num_failures, num_samples = sample_failures(
         dem, mwpm, max_samples=1_000, max_time=10, max_failures=100
     )
     assert (

@@ -142,23 +142,23 @@ def lmfit_par_to_ufloat(param: lmfit.parameter.Parameter):
 
 
 def confidence_interval_binomial(
-    n_success: int | np.ndarray,
-    n_total: int | np.ndarray,
+    num_failures: int | np.ndarray,
+    num_samples: int | np.ndarray,
     probit: float = 1.96,
     method="wilson",
 ) -> Tuple[float | np.ndarray, float | np.ndarray]:
-    """Returns the lower and upper bounds for the given sucess and total sample
-    numbers of a Bernouilli trial.
+    """Returns the lower and upper bounds for the logical error probability 
+    given the number of decoding failures and samples.
 
     The lower and upper bounds are absolute (not relative to the average),
-    meaning that :math:`lower_bound < n_success/n_total < upper_bound`.
+    meaning that :math:`lower_bound < num_failures/num_samples < upper_bound`.
 
     Parameters
     ----------
-    n_success
-        Number of successes.
-    n_total
-        Number of trials.
+    num_failures
+        Number of decoding failures.
+    num_samples
+        Number of samples.
     probit
         :math:`1 - \alpha/2` quantile of a standard normal distribution
         corresponding to the target error rate :math:`\alpha`.
@@ -185,11 +185,12 @@ def confidence_interval_binomial(
             f"Only the 'wilson' method is available, but '{method}' was given."
         )
 
-    middle_point = (n_success + 0.5 * probit**2) / (n_total + probit**2)
+    num_successes = num_samples - num_failures
+    middle_point = (num_failures + 0.5 * probit**2) / (num_samples + probit**2)
     width = (
         probit
-        / (n_total + probit**2)
-        * np.sqrt((n_success) * (1 - n_success) / n_total + probit**2 / 4)
+        / (num_samples + probit**2)
+        * np.sqrt(num_successes * num_failures / num_samples + probit**2 / 4)
     )
 
     lower_bound = middle_point - width

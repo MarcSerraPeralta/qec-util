@@ -5,7 +5,7 @@ from .util import (
     lmfit_par_to_ufloat,
     confidence_interval_binomial,
 )
-from .sampler import sampler
+from .sampler import sample_failures
 
 __all__ = [
     "logical_error_prob",
@@ -13,5 +13,5 @@ __all__ = [
     "LogicalErrorProbDecayModel",
     "lmfit_par_to_ufloat",
     "confidence_interval_binomial",
-    "sampler",
+    "sample_failures",
 ]

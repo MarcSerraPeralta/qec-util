@@ -5,15 +5,15 @@ import numpy as np
 import stim
 
 
-def sampler(
+def sample_failures(
     dem: stim.DetectorErrorModel,
     decoder,
     max_failures: int = 100,
     max_time: int = 3600,
     max_samples: int = 1_000_000,
 ) -> Tuple[int, int]:
-    """Samples a ``stim.DetectorErrorModel`` until one of three conditions
-    is met: (1) max. number of failures reached, (2) max. runtime reached,
+    """Samples decoding failures until one of three conditions is met: 
+    (1) max. number of failures reached, (2) max. runtime reached,
     (3) max. number of samples taken.
 
     Parameters
