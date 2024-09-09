@@ -150,7 +150,7 @@ def confidence_interval_binomial(
     """Returns the lower and upper bounds for the given sucess and total sample
     numbers of a Bernouilli trial.
 
-    The lower and upper bounds are absolute (not relative to the average), 
+    The lower and upper bounds are absolute (not relative to the average),
     meaning that :math:`lower_bound < n_success/n_total < upper_bound`.
 
     Parameters
