@@ -76,10 +76,10 @@ def test_lmfit_par_to_ufloat():
 
 
 def test_confidence_interval_binomial():
-    n_success, n_total = 1, 100
-    average = n_success / n_total
+    num_failures, num_samples = 1, 100
+    average = num_failures / num_samples
     lower_bound, upper_bound = util.confidence_interval_binomial(
-        n_success, n_total, probit=1
+        num_failures, num_samples, probit=1
     )
     assert lower_bound > 0 and lower_bound < average
     assert upper_bound > 0 and upper_bound > average
