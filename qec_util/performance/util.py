@@ -147,7 +147,7 @@ def confidence_interval_binomial(
     probit: float = 1.96,
     method="wilson",
 ) -> Tuple[float | np.ndarray, float | np.ndarray]:
-    """Returns the lower and upper bounds for the logical error probability 
+    """Returns the lower and upper bounds for the logical error probability
     given the number of decoding failures and samples.
 
     The lower and upper bounds are absolute (not relative to the average),
