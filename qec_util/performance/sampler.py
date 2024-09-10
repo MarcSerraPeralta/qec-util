@@ -8,11 +8,11 @@ import stim
 def sample_failures(
     dem: stim.DetectorErrorModel,
     decoder,
-    max_failures: int = 100,
-    max_time: int = 3600,
-    max_samples: int = 1_000_000,
+    max_failures: int | float = 100,
+    max_time: int | float = 3600,
+    max_samples: int | float = 1_000_000,
 ) -> Tuple[int, int]:
-    """Samples decoding failures until one of three conditions is met: 
+    """Samples decoding failures until one of three conditions is met:
     (1) max. number of failures reached, (2) max. runtime reached,
     (3) max. number of samples taken.
 
@@ -25,11 +25,15 @@ def sample_failures(
         Decoder object with a ``decode_batch`` method.
     max_failures
         Maximum number of failures to reach before stopping the calculation.
+        Set this parameter to ``np.inf`` to not have any restriction on the
+        maximum number of failures.
     max_time
         Maximum duration for this function, in seconds. Set this parameter
         to ``np.inf`` to not place any restriction on runtime.
     max_samples
         Maximum number of samples to reach before stopping the calculation.
+        Set this parameter to ``np.inf`` to not have any restriction on the
+        maximum number of samples.
 
     Returns
     -------
@@ -61,7 +65,10 @@ def sample_failures(
             max_failures / log_err_prob if log_err_prob != 0 else np.inf,
         ]
     )
-    batch_size = int(estimated_max_samples / 10)
+    batch_size = estimated_max_samples / 10
+    batch_size = max([batch_size, 1])  # avoid batch_size = 0
+    batch_size = min([batch_size, 50_000])  # avoid batch_size = np.inf
+    batch_size = int(batch_size)  # int(np.inf) raises an error
 
     # start sampling...
     while (
