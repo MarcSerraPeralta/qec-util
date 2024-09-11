@@ -67,7 +67,7 @@ def sample_failures(
     )
     batch_size = estimated_max_samples / 10
     batch_size = max([batch_size, 1])  # avoid batch_size = 0
-    batch_size = min([batch_size, 50_000])  # avoid batch_size = np.inf
+    batch_size = batch_size if batch_size != np.inf else 200_000
     batch_size = int(batch_size)  # int(np.inf) raises an error
 
     # start sampling...
