@@ -14,29 +14,29 @@ def plot_line_threshold(
     color: Optional[str] = "blue",
 ) -> plt.Axes:
     """Plots the logical error probability as a function of the physiscal
-        error probability, including its upper and lower error bars (if given).
-    arange
-        Parameters
-        ----------
-        ax
-            Matplotlib axis in which to plot.
-        phys_prob
-            Physical error probabilities.
-        log_prob
-            Logical error probability.
-        log_prob_lower
-            Lower bound on the logical error probability uncertainty.
-        log_prob_upper
-            Upper bound on the logical error probability uncertainty.
-        label
-            Label for the data. By default, no label.
-        color
-            Color for the data. By default, blue.
+    error probability, including its upper and lower error bars (if given).
 
-        Returns
-        -------
-        ax
-            Matplotlib axis.
+    Parameters
+    ----------
+    ax
+        Matplotlib axis in which to plot.
+    phys_prob
+        Physical error probabilities.
+    log_prob
+        Logical error probability.
+    log_prob_lower
+        Lower bound on the logical error probability uncertainty.
+    log_prob_upper
+        Upper bound on the logical error probability uncertainty.
+    label
+        Label for the data. By default, no label.
+    color
+        Color for the data. By default, blue.
+
+    Returns
+    -------
+    ax
+        Matplotlib axis.
     """
     ax.plot(phys_prob, log_prob, ".", color=color, label=label)
     if (log_prob_lower is not None) and (log_prob_upper is not None):
