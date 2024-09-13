@@ -1,5 +1,6 @@
-from typing import Tuple
+from typing import Tuple, Optional, Callable
 import time
+import pathlib
 
 import numpy as np
 import stim
@@ -11,6 +12,8 @@ def sample_failures(
     max_failures: int | float = 100,
     max_time: int | float = 3600,
     max_samples: int | float = 1_000_000,
+    file_name: Optional[str | pathlib.Path] = None,
+    decoding_failure: Callable = lambda x: x.any(axis=1),
 ) -> Tuple[int, int]:
     """Samples decoding failures until one of three conditions is met:
     (1) max. number of failures reached, (2) max. runtime reached,
@@ -34,6 +37,19 @@ def sample_failures(
         Maximum number of samples to reach before stopping the calculation.
         Set this parameter to ``np.inf`` to not have any restriction on the
         maximum number of samples.
+    file_name
+        Name of the file in which to store the partial results.
+        If the file does not exist, it will be created.
+        Specifying a file is useful if the computation is stop midway, so
+        that it can be continued in if the same file is given. It can also
+        be used to sample more points.
+    decoding_failure
+        Function that returns `True` if there has been a decoding failure, else
+        `False`. Its input is an ``np.ndarray`` of shape
+        ``(num_samples, num_observables)`` and its output must be a boolean
+        ``np.ndarray`` of shape ``(num_samples,)``.
+        By default, a decoding failure is when a logical error happened to
+        any of the logical observables.
 
     Returns
     -------
@@ -41,6 +57,13 @@ def sample_failures(
         Number of decoding failures.
     num_samples
         Number of samples taken.
+
+    Notes
+    -----
+    If ``file_name`` is specified, each batch is stored in the file in a
+    different line using the following format: ``num_failures num_samples\n``.
+    The number of failures and samples can be read using
+    ``read_failures_from_file`` function present in the same module.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
@@ -51,13 +74,23 @@ def sample_failures(
 
     sampler = dem.compile_sampler()
     num_failures, num_samples = 0, 0
+    if (file_name is not None) and pathlib.Path(file_name).exists():
+        num_failures, num_samples = read_failures_from_file(file_name)
+        # update the maximum limits based on the already calculated samples
+        max_samples -= num_samples
+        max_failures -= num_failures
 
     # estimate the batch size for decoding
     defects, log_flips, _ = sampler.sample(shots=100)
     t_init = time.time()
     predictions = decoder.decode_batch(defects)
     run_time = (time.time() - t_init) / 100
-    log_err_prob = np.average(predictions != log_flips)
+    failures = decoding_failure(predictions != log_flips)
+    if (not isinstance(failures, np.ndarray)) or (failures.shape != (100,)):
+        raise ValueError(
+            f"'decoding_function' does not return a correctly shaped output"
+        )
+    log_err_prob = np.average(failures)
     estimated_max_samples = min(
         [
             max_samples,
@@ -79,7 +112,67 @@ def sample_failures(
         defects, log_flips, _ = sampler.sample(shots=batch_size)
         predictions = decoder.decode_batch(defects)
         log_errors = predictions != log_flips
-        num_failures += log_errors.sum()
+        batch_failures = decoding_failure(log_errors).sum()
+
+        num_failures += batch_failures
         num_samples += batch_size
+        if file_name is not None:
+            with open(file_name, "a") as file:
+                file.write(f"{batch_failures} {batch_size}\n")
 
     return int(num_failures), num_samples
+
+
+def read_failures_from_file(
+    file_name: str | pathlib.Path,
+    max_num_failures: int | float = np.inf,
+    max_num_samples: int | float = np.inf,
+) -> Tuple[int, int]:
+    """Returns the number of failues and samples stored in a file.
+
+    Parameters
+    ----------
+    file_name
+        Name of the file with the data.
+        The structure of the file is specified in the Notes and the intended
+        usage is for the ``sample_failures`` function.
+    max_num_failues
+        If specified, only adds up the first batches until the number of
+        failures reaches or (firstly) surpasses the given number.
+        By default ``np.inf``, thus it adds up all the batches in the file.
+    max_num_samples
+        If specified, only adds up the first batches until the number of
+        samples reaches or (firstly) surpasses the given number.
+        By default ``np.inf``, thus it adds up all the batches in the file.
+
+    Returns
+    -------
+    num_failures
+        Total number of failues in the given number of samples.
+    num_samples
+        Total number of samples.
+
+    Notes
+    -----
+    The structure of ``file_name`` file is: each batch is stored in the file in a
+    different line using the format ``num_failures num_samples\n``.
+    The file ends with an empty line.
+    """
+    if not pathlib.Path(file_name).exists():
+        raise FileExistsError(f"The given file ({file_name}) does not exist.")
+
+    num_failures, num_samples = 0, 0
+    with open(file_name, "r") as file:
+        for line in file:
+            if line == "":
+                continue
+
+            line = line[:-1]  # remove \n character at the end
+            batch_failures, batch_samples = map(int, line.split(" "))
+            num_failures += batch_failures
+            num_samples += batch_samples
+
+            if num_failures >= max_num_failures or num_samples >= max_num_samples:
+                return num_failures, num_samples
+
+    return num_failures, num_samples
