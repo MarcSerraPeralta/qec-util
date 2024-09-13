@@ -6,6 +6,7 @@ from .util import (
     confidence_interval_binomial,
 )
 from .sampler import sample_failures
+from . import plots
 
 __all__ = [
     "logical_error_prob",
@@ -14,4 +15,5 @@ __all__ = [
     "lmfit_par_to_ufloat",
     "confidence_interval_binomial",
     "sample_failures",
+    "plots",
 ]
