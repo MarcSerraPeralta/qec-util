@@ -44,8 +44,8 @@ def sample_failures(
         that it can be continued in if the same file is given. It can also
         be used to sample more points.
     decoding_failure
-        Function that returns if there has been a decoding failure.
-        Its input is an ``np.ndarray`` of shape
+        Function that returns `True` if there has been a decoding failure, else
+        `False`. Its input is an ``np.ndarray`` of shape
         ``(num_samples, num_observables)`` and its output must be a boolean
         ``np.ndarray`` of shape ``(num_samples,)``.
         By default, a decoding failure is when a logical error happened to
@@ -62,8 +62,8 @@ def sample_failures(
     -----
     If ``file_name`` is specified, each batch is stored in the file in a
     different line using the following format: ``num_failures num_samples\n``.
-    The number of failures and samples can be read using ``read_from_file``
-    function present in the same module.
+    The number of failures and samples can be read using
+    ``read_failures_from_file`` function present in the same module.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
@@ -75,7 +75,7 @@ def sample_failures(
     sampler = dem.compile_sampler()
     num_failures, num_samples = 0, 0
     if (file_name is not None) and pathlib.Path(file_name).exists():
-        num_failures, num_samples = read_from_file(file_name)
+        num_failures, num_samples = read_failures_from_file(file_name)
         # update the maximum limits based on the already calculated samples
         max_samples -= num_samples
         max_failures -= num_failures
@@ -85,7 +85,12 @@ def sample_failures(
     t_init = time.time()
     predictions = decoder.decode_batch(defects)
     run_time = (time.time() - t_init) / 100
-    log_err_prob = np.average(predictions != log_flips)
+    failures = decoding_failure(predictions != log_flips)
+    if (not isinstance(failures, np.ndarray)) or (failures.shape != (100,)):
+        raise ValueError(
+            f"'decoding_function' does not return a correctly shaped output"
+        )
+    log_err_prob = np.average(failures)
     estimated_max_samples = min(
         [
             max_samples,
@@ -118,7 +123,7 @@ def sample_failures(
     return int(num_failures), num_samples
 
 
-def read_from_file(
+def read_failures_from_file(
     file_name: str | pathlib.Path,
     max_num_failures: int | float = np.inf,
     max_num_samples: int | float = np.inf,
@@ -143,7 +148,7 @@ def read_from_file(
     Returns
     -------
     num_failures
-        Total number of failues in the given ``num_samples``.
+        Total number of failues in the given number of samples.
     num_samples
         Total number of samples.
 
@@ -160,7 +165,7 @@ def read_from_file(
     with open(file_name, "r") as file:
         for line in file:
             if line == "":
-                return num_failures, num_samples
+                continue
 
             line = line[:-1]  # remove \n character at the end
             batch_failures, batch_samples = map(int, line.split(" "))

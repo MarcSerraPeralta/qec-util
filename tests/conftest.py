@@ -17,11 +17,11 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture(scope="session")
 def failures_file(tmp_path_factory):
     """This function is executed before any test is run and creates
-    a file in a temporary file that can be passed to any test function.
+    a file in a temporary directory that can be passed to any test function.
 
     From https://docs.pytest.org/en/stable/how-to/tmp_path.html
     """
-    file_name = tmp_path_factory.mktemp("data") / "sample_failures_file.txt"
+    file_name = tmp_path_factory.mktemp("data") / "tmp_failures_file.txt"
     contents = "10 50\n11 50\n"
     with open(file_name, "w") as file:
         file.write(contents)
