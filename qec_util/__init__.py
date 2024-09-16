@@ -2,6 +2,6 @@
 
 __version__ = "0.1.0"
 
-from . import performance, util
+from . import performance, util, distance
 
-__all__ = ["performance", "util"]
+__all__ = ["performance", "util", "distance"]
