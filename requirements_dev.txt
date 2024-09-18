@@ -103,6 +103,8 @@ python-dateutil==2.9.0.post0
     # via
     #   matplotlib
     #   pandas
+python-sat==1.8.dev13
+    # via qec-util (pyproject.toml)
 pytz==2024.1
     # via pandas
 pyyaml==6.0.2
@@ -116,7 +118,9 @@ scipy==1.14.0
     #   lmfit
     #   pymatching
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   python-dateutil
+    #   python-sat
 stim==1.13.0
     # via qec-util (pyproject.toml)
 toml==0.10.2

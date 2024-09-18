@@ -24,6 +24,7 @@ dependencies = [
     "networkx",
     "lmfit",
     "stim",
+    "python-sat",
 ]
 
 [tool.setuptools.packages.find]
