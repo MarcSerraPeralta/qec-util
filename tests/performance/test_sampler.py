@@ -33,6 +33,31 @@ def test_sampler_to_file(tmp_path):
     return
 
 
+def test_sample_early_stopping(failures_file):
+    circuit = stim.Circuit.generated(
+        code_task="repetition_code:memory",
+        distance=3,
+        rounds=3,
+        after_clifford_depolarization=0.01,
+    )
+    dem = circuit.detector_error_model()
+    mwpm = Matching(dem)
+
+    num_failures, num_samples = sample_failures(
+        dem,
+        mwpm,
+        max_samples=1,
+        max_time=np.inf,
+        max_failures=1,
+        file_name=failures_file,
+    )
+
+    assert num_failures == 21
+    assert num_samples == 100
+
+    return
+
+
 def test_sampler_from_file(failures_file):
     circuit = stim.Circuit.generated(
         code_task="repetition_code:memory",

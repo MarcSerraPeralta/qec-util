@@ -79,6 +79,9 @@ def sample_failures(
         # update the maximum limits based on the already calculated samples
         max_samples -= num_samples
         max_failures -= num_failures
+        # check if desired samples/failures have been reached
+        if (max_samples <= 0) or (max_failures <= 0):
+            return num_failures, num_samples
 
     # estimate the batch size for decoding
     defects, log_flips, _ = sampler.sample(shots=100)
@@ -98,7 +101,7 @@ def sample_failures(
             max_failures / log_err_prob if log_err_prob != 0 else np.inf,
         ]
     )
-    batch_size = estimated_max_samples / 10
+    batch_size = estimated_max_samples / 5
     batch_size = max([batch_size, 1])  # avoid batch_size = 0
     batch_size = batch_size if batch_size != np.inf else 200_000
     batch_size = int(batch_size)  # int(np.inf) raises an error
