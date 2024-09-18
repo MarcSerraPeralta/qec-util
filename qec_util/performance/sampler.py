@@ -80,7 +80,7 @@ def sample_failures(
         max_samples -= num_samples
         max_failures -= num_failures
         # check if desired samples/failures have been reached
-        if (max_samples < 0) or (max_failures < 0):
+        if (max_samples <= 0) or (max_failures <= 0):
             return num_failures, num_samples
 
     # estimate the batch size for decoding
