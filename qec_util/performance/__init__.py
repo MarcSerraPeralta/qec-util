@@ -5,7 +5,8 @@ from .util import (
     lmfit_par_to_ufloat,
     confidence_interval_binomial,
 )
-from .sampler import sample_failures
+from .sampler import sample_failures, read_failures_from_file
+from . import plots
 
 __all__ = [
     "logical_error_prob",
@@ -14,4 +15,6 @@ __all__ = [
     "lmfit_par_to_ufloat",
     "confidence_interval_binomial",
     "sample_failures",
+    "read_failures_from_file",
+    "plots",
 ]

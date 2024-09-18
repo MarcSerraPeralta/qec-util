@@ -2,7 +2,6 @@
 
 __version__ = "0.1.0"
 
-from . import layouts, util
-from .layouts import Layout
+from . import performance, util, distance
 
-__all__ = ["Layout", "layouts", "util"]
+__all__ = ["performance", "util", "distance"]
