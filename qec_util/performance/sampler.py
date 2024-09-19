@@ -71,9 +71,10 @@ def sample_failures(
         )
     if "decode_batch" not in dir(decoder):
         raise TypeError("'decoder' does not have a 'decode_batch' method.")
-
+        
     sampler = dem.compile_sampler()
     num_failures, num_samples = 0, 0
+
     if (file_name is not None) and pathlib.Path(file_name).exists():
         num_failures, num_samples = read_failures_from_file(file_name)
         # check if desired samples/failures have been reached
@@ -102,7 +103,7 @@ def sample_failures(
             ),
         ]
     )
-    batch_size = estimated_max_samples / 5  # perform 5 batches
+    batch_size = estimated_max_samples / 5  # perform approx 5 batches
 
     # avoid batch_size = 0 or np.inf and also avoid overshooting
     batch_size = max([batch_size, 1])
