@@ -10,7 +10,7 @@ def sample_failures(
     dem: stim.DetectorErrorModel,
     decoder,
     max_failures: int | float = 100,
-    max_time: int | float = 3600,
+    max_time: int | float = np.inf,
     max_samples: int | float = 1_000_000,
     file_name: Optional[str | pathlib.Path] = None,
     decoding_failure: Callable = lambda x: x.any(axis=1),
@@ -31,8 +31,8 @@ def sample_failures(
         Set this parameter to ``np.inf`` to not have any restriction on the
         maximum number of failures.
     max_time
-        Maximum duration for this function, in seconds. Set this parameter
-        to ``np.inf`` to not place any restriction on runtime.
+        Maximum duration for this function, in seconds. By default, this
+        parameter is set to ``np.inf`` to not place any restriction on runtime.
     max_samples
         Maximum number of samples to reach before stopping the calculation.
         Set this parameter to ``np.inf`` to not have any restriction on the
@@ -76,11 +76,8 @@ def sample_failures(
     num_failures, num_samples = 0, 0
     if (file_name is not None) and pathlib.Path(file_name).exists():
         num_failures, num_samples = read_failures_from_file(file_name)
-        # update the maximum limits based on the already calculated samples
-        max_samples -= num_samples
-        max_failures -= num_failures
         # check if desired samples/failures have been reached
-        if (max_samples <= 0) or (max_failures <= 0):
+        if (num_samples >= max_samples) or (num_failures >= max_failures):
             return num_failures, num_samples
 
     # estimate the batch size for decoding
@@ -96,15 +93,24 @@ def sample_failures(
     log_err_prob = np.average(failures)
     estimated_max_samples = min(
         [
-            max_samples,
+            max_samples - num_samples,
             max_time / run_time,
-            max_failures / log_err_prob if log_err_prob != 0 else np.inf,
+            (
+                (max_failures - num_failures) / log_err_prob
+                if log_err_prob != 0
+                else np.inf
+            ),
         ]
     )
-    batch_size = estimated_max_samples / 5
-    batch_size = max([batch_size, 1])  # avoid batch_size = 0
+    batch_size = estimated_max_samples / 5  # perform 5 batches
+
+    # avoid batch_size = 0 or np.inf and also avoid overshooting
+    batch_size = max([batch_size, 1])
+    batch_size = min([batch_size, max_samples - num_samples])
+    # int(np.inf) raises an error and it could be that both batch_size and
+    # max_samples are np.inf
     batch_size = batch_size if batch_size != np.inf else 200_000
-    batch_size = int(batch_size)  # int(np.inf) raises an error
+    batch_size = int(batch_size)
 
     # start sampling...
     while (
@@ -119,9 +125,13 @@ def sample_failures(
 
         num_failures += batch_failures
         num_samples += batch_size
+
         if file_name is not None:
             with open(file_name, "a") as file:
                 file.write(f"{batch_failures} {batch_size}\n")
+            # read again num_samples and num_failures to avoid oversampling
+            # when multiple processes are writing in the same file.
+            num_failures, num_samples = read_failures_from_file(file_name)
 
     return int(num_failures), num_samples
 
