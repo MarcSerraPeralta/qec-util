@@ -71,7 +71,7 @@ def sample_failures(
         )
     if "decode_batch" not in dir(decoder):
         raise TypeError("'decoder' does not have a 'decode_batch' method.")
-        
+
     sampler = dem.compile_sampler()
     num_failures, num_samples = 0, 0
 
