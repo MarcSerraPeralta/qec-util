@@ -1,7 +1,7 @@
 import pytest
 import stim
 
-from qec_util.dems import remove_gauge_detectors, dem_difference
+from qec_util.dems import remove_gauge_detectors, dem_difference, is_instr_in_dem
 
 
 def test_remove_gauge_detectors():
@@ -80,5 +80,46 @@ def test_dem_difference():
 
     assert diff_1 == stim.DetectorErrorModel("error(0.1) D0 L0")
     assert diff_2 == stim.DetectorErrorModel("error(0.5) D0")
+
+    return
+
+
+def test_is_instr_in_dem():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) L0 D0
+        error(0.2) D1 ^ D2
+        error(0.3) D3 D4 D1
+        error(0.5) D1 L1
+        """
+    )
+    dem_instr = stim.DemInstruction(
+        "error",
+        [0.1],
+        [stim.target_relative_detector_id(0), stim.target_logical_observable_id(0)],
+    )
+    assert is_instr_in_dem(dem_instr, dem)
+
+    dem_instr = stim.DemInstruction(
+        "error",
+        [0.2],
+        [stim.target_relative_detector_id(0), stim.target_logical_observable_id(0)],
+    )
+    assert not is_instr_in_dem(dem_instr, dem)
+
+    dem_instr = stim.DemInstruction(
+        "error",
+        [0.5],
+        [stim.target_relative_detector_id(1), stim.target_logical_observable_id(1)],
+    )
+    assert is_instr_in_dem(dem_instr, dem)
+
+    dem_instr = stim.DemInstruction(
+        "detector",
+        [0],
+        [stim.target_relative_detector_id(1)],
+    )
+    with pytest.raises(TypeError):
+        is_instr_in_dem(dem_instr, dem)
 
     return

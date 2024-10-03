@@ -1,5 +1,7 @@
 import stim
 
+from .util import sorting_index
+
 
 def remove_gauge_detectors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
     """Remove the gauge detectors from a DEM."""
@@ -70,18 +72,7 @@ def dem_difference(
         # remove separators
         targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
 
-        # dem_instr1 == dem_instr2 is only true if the argument is the same
-        # and the targets are sorted also in the same way. For example
-        # "error(0.1) D0 D1" is different than "error(0.1) D1 D0".
-        def order_1(t) -> int:
-            if t.is_logical_observable_id():
-                return num_dets + t.val
-            if t.is_relative_detector_id():
-                return t.val
-            else:
-                raise NotImplemented(f"{t} is not a logical or a detector.")
-
-        targets = sorted(targets, key=order_1)
+        targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
         prob = dem_instr.args_copy()[0]
         dem_1_ordered.append("error", prob, targets)
 
@@ -94,18 +85,7 @@ def dem_difference(
         # remove separators
         targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
 
-        # dem_instr1 == dem_instr2 is only true if the argument is the same
-        # and the targets are sorted also in the same way. For example
-        # "error(0.1) D0 D1" is different than "error(0.1) D1 D0".
-        def order_2(t) -> int:
-            if t.is_logical_observable_id():
-                return num_dets + t.val
-            if t.is_relative_detector_id():
-                return t.val
-            else:
-                raise NotImplemented(f"{t} is not a logical or a detector.")
-
-        targets = sorted(targets, key=order_2)
+        targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
         prob = dem_instr.args_copy()[0]
         dem_2_ordered.append("error", prob, targets)
 
@@ -120,3 +100,39 @@ def dem_difference(
             diff_2.append(dem_instr)
 
     return diff_1, diff_2
+
+
+def is_instr_in_dem(
+    dem_instr: stim.DemInstruction, dem: stim.DetectorErrorModel
+) -> bool:
+    """Checks if the DEM error instruction and its undecomposed form are present
+    in the given DEM.
+    """
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
+    if dem_instr.type != "error":
+        raise TypeError(f"'dem_instr' is not an error, but a {dem_instr.type}.")
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    num_dets = dem.num_detectors
+    prob = dem_instr.args_copy()[0]
+    targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
+    targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
+
+    for instr in dem.flattened():
+        if instr.type != "error":
+            continue
+        if instr.args_copy()[0] != prob:
+            continue
+
+        other_targets = [t for t in instr.targets_copy() if not t.is_separator()]
+        other_targets = sorted(other_targets, key=lambda x: sorting_index(x, num_dets))
+        if other_targets == targets:
+            return True
+
+    return False
