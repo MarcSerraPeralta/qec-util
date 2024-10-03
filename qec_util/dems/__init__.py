@@ -1,4 +1,4 @@
-from .dems import remove_gauge_detectors
+from .dems import remove_gauge_detectors, dem_difference
 
 
-__all__ = ["remove_gauge_detectors"]
+__all__ = ["remove_gauge_detectors", "dem_difference"]

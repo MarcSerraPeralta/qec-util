@@ -3,6 +3,9 @@ import stim
 
 def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
     """Removes the gauge detectors from the given circuit."""
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError("'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+
     dem = circuit.detector_error_model(allow_gauge_detectors=True)
     gauge_dets = []
     for dem_instr in dem.flattened():
