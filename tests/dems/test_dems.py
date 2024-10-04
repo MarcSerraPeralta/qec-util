@@ -6,6 +6,7 @@ from qec_util.dems import (
     dem_difference,
     is_instr_in_dem,
     get_max_weight_hyperedge,
+    disjoint_graphs,
 )
 
 
@@ -167,5 +168,26 @@ def test_get_max_weight_hyperedge():
 
     assert max_weight == 0
     assert hyperedge == expected_hyperedge
+
+    return
+
+
+def test_disjoint_graphs():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) L0 D0
+        error(0.2) D1 ^ D2
+        error(0.3) D3 D4 D1
+        error(0.5) D5 D6
+        detector(0) D0
+        """
+    )
+
+    subgraphs = disjoint_graphs(dem)
+    subgraphs = set(tuple(sorted(s)) for s in subgraphs)
+
+    expected_subgraphs = set([(0,), (1, 2, 3, 4), (5, 6)])
+
+    assert subgraphs == expected_subgraphs
 
     return

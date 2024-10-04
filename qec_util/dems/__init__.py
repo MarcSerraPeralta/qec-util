@@ -3,6 +3,7 @@ from .dems import (
     dem_difference,
     is_instr_in_dem,
     get_max_weight_hyperedge,
+    disjoint_graphs,
 )
 
 
@@ -11,4 +12,5 @@ __all__ = [
     "dem_difference",
     "is_instr_in_dem",
     "get_max_weight_hyperedge",
+    "disjoint_graphs",
 ]

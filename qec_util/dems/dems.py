@@ -1,4 +1,5 @@
 import stim
+import networkx as nx
 
 from .util import sorting_index
 
@@ -173,3 +174,37 @@ def get_max_weight_hyperedge(
             hyperedge = dem_instr
 
     return max_weight, hyperedge
+
+
+def disjoint_graphs(dem: stim.DetectorErrorModel) -> list[list[int]]:
+    """Return the nodes in the disjoint subgraphs that the DEM (or decoding
+    graph) can be split into."""
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    # convert stim.DetectorErrorModel to nx.Graph
+    # to use the functionality 'nx.connected_components(G)'
+    g = nx.Graph()
+    for dem_instr in dem.flattened():
+        if dem_instr.type != "error":
+            continue
+
+        targets = dem_instr.targets_copy()
+        targets = [t.val for t in targets if t.is_relative_detector_id()]
+
+        if len(targets) == 1:
+            g.add_node(targets[0])
+
+        # hyperedges cannot be added to nx.Graph, but if we are just checking
+        # the number of disjoint graphs, we can transform the hyperedge to a
+        # sequence of edges which keeps the same connectiviy between nodes.
+        # For example, hyperedge (0,2,5,6) can be expressed as edges (0,2),
+        # (2,5) and (5,6).
+        for start, end in zip(targets[:-1], targets[1:]):
+            g.add_edge(start, end)
+
+    subgraphs = [list(c) for c in nx.connected_components(g)]
+
+    return subgraphs
