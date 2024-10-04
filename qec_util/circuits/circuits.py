@@ -74,3 +74,22 @@ def remove_detectors_except(
             new_circuit.append(instr)
 
     return new_circuit
+
+
+def logicals_to_detectors(circuit: stim.Circuit) -> stim.Circuit:
+    """Converts the logical observables of a circuit to detectors."""
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+
+    new_circuit = stim.Circuit()
+    for instr in circuit.flattened():
+        if instr.name != "OBSERVABLE_INCLUDE":
+            new_circuit.append(instr)
+            continue
+
+        targets = instr.targets_copy()
+        args = instr.gate_args_copy()
+        new_instr = stim.CircuitInstruction("DETECTOR", gate_args=args, targets=targets)
+        new_circuit.append(new_instr)
+
+    return new_circuit
