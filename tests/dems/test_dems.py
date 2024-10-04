@@ -1,7 +1,12 @@
 import pytest
 import stim
 
-from qec_util.dems import remove_gauge_detectors, dem_difference, is_instr_in_dem
+from qec_util.dems import (
+    remove_gauge_detectors,
+    dem_difference,
+    is_instr_in_dem,
+    get_max_weight_hyperedge,
+)
 
 
 def test_remove_gauge_detectors():
@@ -121,5 +126,46 @@ def test_is_instr_in_dem():
     )
     with pytest.raises(TypeError):
         is_instr_in_dem(dem_instr, dem)
+
+    return
+
+
+def test_get_max_weight_hyperedge():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) L0 D0
+        error(0.2) D1 ^ D2
+        error(0.3) D3 D4 D1
+        error(0.5) D1 L1
+        """
+    )
+
+    max_weight, hyperedge = get_max_weight_hyperedge(dem)
+
+    expected_hyperedge = stim.DemInstruction(
+        "error",
+        args=[0.3],
+        targets=[
+            stim.target_relative_detector_id(3),
+            stim.target_relative_detector_id(4),
+            stim.target_relative_detector_id(1),
+        ],
+    )
+
+    assert max_weight == 3
+    assert hyperedge == expected_hyperedge
+
+    dem = stim.DetectorErrorModel()
+
+    max_weight, hyperedge = get_max_weight_hyperedge(dem)
+
+    expected_hyperedge = stim.DemInstruction(
+        "error",
+        args=[0.0],
+        targets=[],
+    )
+
+    assert max_weight == 0
+    assert hyperedge == expected_hyperedge
 
     return

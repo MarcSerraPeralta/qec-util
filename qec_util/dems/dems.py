@@ -136,3 +136,40 @@ def is_instr_in_dem(
             return True
 
     return False
+
+
+def get_max_weight_hyperedge(
+    dem: stim.DetectorErrorModel,
+) -> tuple[int, stim.DemInstruction]:
+    """Return the weight and hyperedges corresponding to the max-weight hyperedge.
+
+    Parameters
+    ----------
+    dem
+        Stim detector error model.
+
+    Returns
+    -------
+    weight
+        Weight of the max-weight hyperedge in ``dem``.
+    hyperedge
+        Hyperedge with the max-weight in ``dem``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    max_weight = 0
+    hyperedge = stim.DemInstruction(type="error", args=[0], targets=[])
+    for dem_instr in dem.flattened():
+        if dem_instr.type != "error":
+            continue
+
+        targets = dem_instr.targets_copy()
+        targets = [t for t in targets if t.is_relative_detector_id()]
+        if len(targets) > max_weight:
+            max_weight = len(targets)
+            hyperedge = dem_instr
+
+    return max_weight, hyperedge
