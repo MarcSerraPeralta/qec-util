@@ -1,4 +1,4 @@
-from .circuits import remove_gauge_detectors
+from .circuits import remove_gauge_detectors, remove_detectors_except
 
 
-__all__ = ["remove_gauge_detectors"]
+__all__ = ["remove_gauge_detectors", "remove_detectors_except"]

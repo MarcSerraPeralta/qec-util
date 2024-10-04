@@ -1,6 +1,5 @@
 def sorting_index(t, num_dets) -> int:
-    """
-    Function to sort the logical and detector targets inside a DEM instruction.
+    """Function to sort the logical and detector targets inside a DEM instruction.
 
     Parameters
     ----------
