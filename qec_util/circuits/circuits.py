@@ -36,6 +36,7 @@ def remove_detectors_except(
     circuit: stim.Circuit, det_ids_exception: Sequence[int] = []
 ) -> stim.Circuit:
     """Removes all detectors from a circuit except the specified ones.
+    Useful for plotting individual detectors with ``stim.Circuit.diagram``.
 
     Parameters
     ----------
