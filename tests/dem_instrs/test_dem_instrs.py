@@ -68,6 +68,7 @@ def test_has_separator():
 def test_remove_detectors():
     dem = stim.DetectorErrorModel(
         """
+        error(0.1) D0 ^ D0 ^ D0
         error(0.1) D0 L0 ^ D1 L1 ^ D0
         error(0.1) D0 D1 L2 L1
         """
@@ -75,6 +76,7 @@ def test_remove_detectors():
 
     expected_dem = stim.DetectorErrorModel(
         """
+        error(0.1)
         error(0.1) L0 ^ D1 L1
         error(0.1) D1 L2 L1
         """
@@ -87,7 +89,7 @@ def test_remove_detectors():
     return
 
 
-def test_remove_detectors():
+def test_sorted_dem_instr():
     dem = stim.DetectorErrorModel(
         """
         error(0.1) D0 L0 ^ D1 L1 ^ D0
