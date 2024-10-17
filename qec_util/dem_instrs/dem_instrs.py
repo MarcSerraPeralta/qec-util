@@ -7,6 +7,10 @@ from .util import xor_lists
 
 def get_detectors(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
     """Returns the detector indices that are flipped in the given DEM instruction."""
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
     if dem_instr.type != "error":
         raise ValueError(f"DemInstruction is not an error, it is {dem_instr.type}.")
 
@@ -22,6 +26,10 @@ def get_detectors(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
 
 def get_logicals(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
     """Returns the logical observable indices that are flipped in the given DEM instruction."""
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
     if dem_instr.type != "error":
         raise ValueError(f"DemInstruction is not an error, it is {dem_instr.type}.")
 
@@ -37,6 +45,10 @@ def get_logicals(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
 
 def has_separator(dem_instr: stim.DemInstruction) -> bool:
     """Returns if the given DEM instruction has a separator."""
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
     if dem_instr.type != "error":
         raise ValueError(f"DemInstruction is not an error, it is {dem_instr.type}.")
 
@@ -47,6 +59,10 @@ def decomposed_detectors(dem_instr: stim.DemInstruction) -> list[tuple[int, ...]
     """Returns a list of the detector indices triggered for each fault that the DEM
     instruction is decomposed into.
     """
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
     if dem_instr.type != "error":
         raise ValueError(f"DemInstruction is not an error, it is {dem_instr.type}.")
 
@@ -118,12 +134,12 @@ def remove_detectors(
     # end of a stim.DemInstruction.
     correct = [False, False]
     while not (correct[0] and correct[1]):
-        if targets[0].is_separator():
+        if (len(targets) != 0) and targets[0].is_separator():
             targets = targets[1:]
         else:
             correct[0] = True
 
-        if targets[-1].is_separator():
+        if (len(targets) != 0) and targets[-1].is_separator():
             targets = targets[:-1]
         else:
             correct[1] = True
