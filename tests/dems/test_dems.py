@@ -7,6 +7,8 @@ from qec_util.dems import (
     is_instr_in_dem,
     get_max_weight_hyperedge,
     disjoint_graphs,
+    get_flippable_detectors,
+    get_flippable_logicals,
 )
 
 
@@ -189,5 +191,47 @@ def test_disjoint_graphs():
     expected_subgraphs = set([(0,), (1, 2, 3, 4), (5, 6)])
 
     assert subgraphs == expected_subgraphs
+
+    return
+
+
+def test_get_flippable_detectors():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D4 D6
+        error(0.3) D3 L5
+        detector D0
+        detector D1
+        detector D2
+        detector D5
+        """
+    )
+
+    dets = get_flippable_detectors(dem)
+
+    expected_dets = set([3, 4, 6])
+
+    assert dets == expected_dets
+
+    return
+
+
+def test_get_flippable_logicals():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D4 D6
+        error(0.3) D3 L2 L3
+        detector D0
+        detector D1
+        detector D2
+        detector D5
+        """
+    )
+
+    logs = get_flippable_logicals(dem)
+
+    expected_logs = set([2, 3])
+
+    assert logs == expected_logs
 
     return

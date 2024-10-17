@@ -3,7 +3,11 @@ import pathlib
 
 
 DIR_EXCEPTIONS = ["__pycache__"]
-FILE_EXCEPTIONS = ["__init__.py", "qec_util/dems/util.py"]
+FILE_EXCEPTIONS = [
+    "__init__.py",
+    "qec_util/dems/util.py",
+    "qec_util/dem_instrs/util.py",
+]
 
 
 def test_tests():
