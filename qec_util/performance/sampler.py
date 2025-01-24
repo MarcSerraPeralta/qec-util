@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Callable
+from collections.abc import Callable
 import time
 import pathlib
 
@@ -12,9 +12,10 @@ def sample_failures(
     max_failures: int | float = 100,
     max_time: int | float = np.inf,
     max_samples: int | float = 1_000_000,
-    file_name: Optional[str | pathlib.Path] = None,
+    file_name: str | pathlib.Path | None = None,
     decoding_failure: Callable = lambda x: x.any(axis=1),
-) -> Tuple[int, int]:
+    extra_metrics: Callable = lambda _: list(),
+) -> tuple[int, int, list[int]]:
     """Samples decoding failures until one of three conditions is met:
     (1) max. number of failures reached, (2) max. runtime reached,
     (3) max. number of samples taken.
@@ -50,6 +51,11 @@ def sample_failures(
         ``np.ndarray`` of shape ``(num_samples,)``.
         By default, a decoding failure is when a logical error happened to
         any of the logical observables.
+    extra_metrics
+        Function that returns a tuple of extra metrics to compute appart
+        from the failures. Its input is an ``np.ndarray`` of shape
+        ``(num_samples, num_observables)`` and its output must be a boolean
+        ``np.ndarray`` of shape ``(num_samples,)``.
 
     Returns
     -------
@@ -57,11 +63,15 @@ def sample_failures(
         Number of decoding failures.
     num_samples
         Number of samples taken.
+    extra_metrics
+        Tuple of the extra metrics.
 
     Notes
     -----
     If ``file_name`` is specified, each batch is stored in the file in a
     different line using the following format: ``num_failures num_samples\n``.
+    If extra matrics are calculated, they appear as:
+    ``num_failures num_samples | num_extra_metric_1 num_extra_metric_2 ...\n``.
     The number of failures and samples can be read using
     ``read_failures_from_file`` function present in the same module.
     """
@@ -75,10 +85,10 @@ def sample_failures(
     num_failures, num_samples = 0, 0
 
     if (file_name is not None) and pathlib.Path(file_name).exists():
-        num_failures, num_samples = read_failures_from_file(file_name)
+        num_failures, num_samples, extra = read_failures_from_file(file_name)
         # check if desired samples/failures have been reached
         if (num_samples >= max_samples) or (num_failures >= max_failures):
-            return num_failures, num_samples
+            return num_failures, num_samples, extra
 
     # estimate the batch size for decoding
     sampler = dem.compile_sampler()
@@ -86,11 +96,19 @@ def sample_failures(
     t_init = time.time()
     predictions = decoder.decode_batch(defects)
     run_time = (time.time() - t_init) / 100
-    failures = decoding_failure(predictions != log_flips)
+    log_errors = predictions != log_flips
+    failures = decoding_failure(log_errors)
+    extra = extra_metrics(log_errors)
     if (not isinstance(failures, np.ndarray)) or (failures.shape != (100,)):
         raise ValueError(
-            f"'decoding_function' does not return a correctly shaped output"
+            "'decoding_function' does not return a correctly shaped output."
         )
+    if (
+        (not isinstance(extra, list))
+        or any(not isinstance(m, np.ndarray) for m in extra)
+        or any(m.shape != (100,) for m in extra)
+    ):
+        raise ValueError("'extra_metrics' does not return a correctly shaped output.")
     log_err_prob = np.average(failures)
     estimated_max_samples = min(
         [
@@ -112,6 +130,8 @@ def sample_failures(
     # max_samples are np.inf
     batch_size = batch_size if batch_size != np.inf else 200_000
     batch_size = int(batch_size)
+    # initialize the correct size of extra metrics
+    extra = [0 for _ in extra]
 
     # start sampling...
     while (
@@ -123,25 +143,31 @@ def sample_failures(
         predictions = decoder.decode_batch(defects)
         log_errors = predictions != log_flips
         batch_failures = decoding_failure(log_errors).sum()
+        batch_extra = [int(m.sum()) for m in extra_metrics(log_errors)]
 
         num_failures += batch_failures
         num_samples += batch_size
+        extra = [m + bm for m, bm in zip(extra, batch_extra)]
 
         if file_name is not None:
             with open(file_name, "a") as file:
-                file.write(f"{batch_failures} {batch_size}\n")
+                extra_str = ""
+                if len(extra) != 0:
+                    extra_str = " | " + " ".join([f"{m}" for m in batch_extra])
+
+                file.write(f"{batch_failures} {batch_size}{extra_str}\n")
             # read again num_samples and num_failures to avoid oversampling
             # when multiple processes are writing in the same file.
-            num_failures, num_samples = read_failures_from_file(file_name)
+            num_failures, num_samples, extra = read_failures_from_file(file_name)
 
-    return int(num_failures), num_samples
+    return int(num_failures), num_samples, extra
 
 
 def read_failures_from_file(
     file_name: str | pathlib.Path,
     max_num_failures: int | float = np.inf,
     max_num_samples: int | float = np.inf,
-) -> Tuple[int, int]:
+) -> tuple[int, int, list[int]]:
     """Returns the number of failues and samples stored in a file.
 
     Parameters
@@ -176,17 +202,29 @@ def read_failures_from_file(
         raise FileExistsError(f"The given file ({file_name}) does not exist.")
 
     num_failures, num_samples = 0, 0
+    extra_metrics = []
     with open(file_name, "r") as file:
         for line in file:
             if line == "":
                 continue
 
             line = line[:-1]  # remove \n character at the end
+            if "|" in line:
+                # there are extra metrics
+                line, extra = line.split(" | ")
+                batch_extra_metrics = list(map(int, extra.split(" ")))
+                # initialize correct size of extra_metrics
+                if len(extra_metrics) == 0:
+                    extra_metrics = [0 for _ in batch_extra_metrics]
+                extra_metrics = [
+                    m + bm for m, bm in zip(extra_metrics, batch_extra_metrics)
+                ]
+
             batch_failures, batch_samples = map(int, line.split(" "))
             num_failures += batch_failures
             num_samples += batch_samples
 
             if num_failures >= max_num_failures or num_samples >= max_num_samples:
-                return num_failures, num_samples
+                return num_failures, num_samples, extra_metrics
 
-    return num_failures, num_samples
+    return num_failures, num_samples, extra_metrics
