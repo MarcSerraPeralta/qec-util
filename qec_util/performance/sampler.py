@@ -12,6 +12,7 @@ def sample_failures(
     max_failures: int | float = 100,
     max_time: int | float = np.inf,
     max_samples: int | float = 1_000_000,
+    max_batch_size: int | float = np.inf,
     file_name: str | pathlib.Path | None = None,
     decoding_failure: Callable = lambda x: x.any(axis=1),
     extra_metrics: Callable = lambda _: list(),
@@ -38,6 +39,9 @@ def sample_failures(
         Maximum number of samples to reach before stopping the calculation.
         Set this parameter to ``np.inf`` to not have any restriction on the
         maximum number of samples.
+    max_batch_size
+        Maximum number of samples to decode per batch. This is useful when
+        encountering memory issues, as one can just reduce ``max_batch_size``.
     file_name
         Name of the file in which to store the partial results.
         If the file does not exist, it will be created.
@@ -129,6 +133,7 @@ def sample_failures(
     # int(np.inf) raises an error and it could be that both batch_size and
     # max_samples are np.inf
     batch_size = batch_size if batch_size != np.inf else 200_000
+    batch_size = min([batch_size, max_batch_size])
     batch_size = int(batch_size)
     # initialize the correct size of extra metrics
     extra = [0 for _ in extra]
