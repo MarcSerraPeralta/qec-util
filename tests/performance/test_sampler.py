@@ -67,6 +67,39 @@ def test_sampler_extra_metrics(tmp_path):
     return
 
 
+def test_samples_minimum_requirements():
+    circuit = stim.Circuit.generated(
+        code_task="repetition_code:memory",
+        distance=3,
+        rounds=3,
+        after_clifford_depolarization=0.01,
+    )
+    dem = circuit.detector_error_model()
+    mwpm = Matching(dem)
+
+    _, num_samples, _ = sample_failures(
+        dem,
+        mwpm,
+        max_samples=1,
+        min_samples=200,
+        max_time=0,
+        max_failures=1,
+    )
+    assert num_samples == 200
+
+    num_failures, _, _ = sample_failures(
+        dem,
+        mwpm,
+        max_samples=1,
+        min_failures=20,
+        max_time=0,
+        max_failures=0,
+    )
+    assert num_failures >= 2
+
+    return
+
+
 def test_sample_early_stopping(failures_file):
     circuit = stim.Circuit.generated(
         code_task="repetition_code:memory",
