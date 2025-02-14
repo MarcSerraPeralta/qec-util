@@ -6,6 +6,7 @@ from .dems import (
     disjoint_graphs,
     get_flippable_detectors,
     get_flippable_logicals,
+    contains_only_edges,
 )
 
 
@@ -17,4 +18,5 @@ __all__ = [
     "disjoint_graphs",
     "get_flippable_detectors",
     "get_flippable_logicals",
+    "contains_only_edges",
 ]
