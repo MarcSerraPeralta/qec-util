@@ -5,6 +5,15 @@ import pathlib
 import numpy as np
 import stim
 
+# the package "fcntl" is only available for Unix systems.
+FILE_LOCKING = False
+try:
+    import fcntl
+
+    FILE_LOCKING = True
+except:
+    pass
+
 
 def sample_failures(
     dem: stim.DetectorErrorModel,
@@ -95,6 +104,10 @@ def sample_failures(
     ``num_failures num_samples | num_extra_metric_1 num_extra_metric_2 ...\n``.
     The number of failures and samples can be read using
     ``read_failures_from_file`` function present in the same module.
+
+    The function will use file locking via ``fcntl`` (only available in Unix systems)
+    to avoid having multiple python instances writing on the same file at the same
+    time. For other OS, it will run without file locking.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
@@ -183,12 +196,16 @@ def sample_failures(
         extra = [m + bm for m, bm in zip(extra, batch_extra)]
 
         if file_name is not None:
-            with open(file_name, "a") as file:
-                extra_str = ""
-                if len(extra) != 0:
-                    extra_str = " | " + " ".join([f"{m}" for m in batch_extra])
+            file = open(file_name, "a")
+            if FILE_LOCKING:
+                fcntl.lockf(file, fcntl.LOCK_EX)
 
-                file.write(f"{batch_failures} {batch_size}{extra_str}\n")
+            extra_str = ""
+            if len(extra) != 0:
+                extra_str = " | " + " ".join([f"{m}" for m in batch_extra])
+
+            file.write(f"{batch_failures} {batch_size}{extra_str}\n")
+            file.close()
             # read again num_samples and num_failures to avoid oversampling
             # when multiple processes are writing in the same file.
             num_failures, num_samples, extra = read_failures_from_file(file_name)
