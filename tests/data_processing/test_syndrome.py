@@ -1,4 +1,4 @@
-from qec_util.util import syndrome
+from qec_util.data_processing import syndrome
 
 
 def test_syndrome():
