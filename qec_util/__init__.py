@@ -1,4 +1,11 @@
-from . import performance, util, distance, dems, circuits
+from . import performance, data_processing, distance, dems, circuits, dem_instrs
 
 __version__ = "0.2.0"
-__all__ = ["performance", "util", "distance", "dems", "circuits"]
+__all__ = [
+    "performance",
+    "data_processing",
+    "distance",
+    "dems",
+    "circuits",
+    "dem_instrs",
+]
