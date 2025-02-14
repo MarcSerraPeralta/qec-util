@@ -223,3 +223,11 @@ def get_flippable_logicals(dem: stim.DetectorErrorModel) -> set[int]:
             logs.update(get_logicals(dem_instr))
 
     return logs
+
+
+def contains_only_edges(dem: stim.DetectorErrorModel) -> bool:
+    """Returns if the given DEM contains conly edges or boundary edges."""
+    for dem_instr in dem.flattened():
+        if (dem_instr.type == "error") and len(get_detectors(dem_instr)) > 2:
+            return False
+    return True

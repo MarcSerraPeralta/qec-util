@@ -9,6 +9,7 @@ from qec_util.dems import (
     disjoint_graphs,
     get_flippable_detectors,
     get_flippable_logicals,
+    contains_only_edges,
 )
 
 
@@ -233,5 +234,27 @@ def test_get_flippable_logicals():
     expected_logs = set([2, 3])
 
     assert logs == expected_logs
+
+    return
+
+
+def test_contains_only_edges():
+    dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1
+        """
+    )
+
+    assert contains_only_edges(dem)
+
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D2
+        error(1) D2 D3 D4
+        """
+    )
+
+    assert not contains_only_edges(dem)
 
     return
