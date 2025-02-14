@@ -1,7 +1,7 @@
 import stim
 import networkx as nx
 
-from .util import sorting_index
+from ..dem_instrs import get_detectors, get_logicals, sorted_dem_instr
 
 
 def remove_gauge_detectors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
@@ -65,30 +65,18 @@ def dem_difference(
         )
 
     dem_1_ordered = stim.DetectorErrorModel()
-    num_dets = dem_1.num_detectors
     for dem_instr in dem_1.flattened():
         if dem_instr.type != "error":
             continue
 
-        # remove separators
-        targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
-
-        targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
-        prob = dem_instr.args_copy()[0]
-        dem_1_ordered.append("error", prob, targets)
+        dem_1_ordered.append(sorted_dem_instr(dem_instr))
 
     dem_2_ordered = stim.DetectorErrorModel()
-    num_dets = dem_2.num_detectors
     for dem_instr in dem_2.flattened():
         if dem_instr.type != "error":
             continue
 
-        # remove separators
-        targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
-
-        targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
-        prob = dem_instr.args_copy()[0]
-        dem_2_ordered.append("error", prob, targets)
+        dem_2_ordered.append(sorted_dem_instr(dem_instr))
 
     diff_1 = stim.DetectorErrorModel()
     for dem_instr in dem_1_ordered:
@@ -120,20 +108,13 @@ def is_instr_in_dem(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
 
-    num_dets = dem.num_detectors
-    prob = dem_instr.args_copy()[0]
-    targets = [t for t in dem_instr.targets_copy() if not t.is_separator()]
-    targets = sorted(targets, key=lambda x: sorting_index(x, num_dets))
+    dem_instr = sorted_dem_instr(dem_instr)
 
-    for instr in dem.flattened():
-        if instr.type != "error":
-            continue
-        if instr.args_copy()[0] != prob:
+    for other_instr in dem.flattened():
+        if other_instr.type != "error":
             continue
 
-        other_targets = [t for t in instr.targets_copy() if not t.is_separator()]
-        other_targets = sorted(other_targets, key=lambda x: sorting_index(x, num_dets))
-        if other_targets == targets:
+        if dem_instr == sorted_dem_instr(other_instr):
             return True
 
     return False
@@ -208,3 +189,37 @@ def disjoint_graphs(dem: stim.DetectorErrorModel) -> list[list[int]]:
     subgraphs = [list(c) for c in nx.connected_components(g)]
 
     return subgraphs
+
+
+def get_flippable_detectors(dem: stim.DetectorErrorModel) -> set[int]:
+    """Returns a the detector indices present in the given DEM
+    that are triggered by some errors.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    dets = set()
+    for dem_instr in dem.flattened():
+        if dem_instr.type == "error":
+            dets.update(get_detectors(dem_instr))
+
+    return dets
+
+
+def get_flippable_logicals(dem: stim.DetectorErrorModel) -> set[int]:
+    """Returns a the logical observable indices present in the given DEM
+    that are triggered by some errors.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    logs = set()
+    for dem_instr in dem.flattened():
+        if dem_instr.type == "error":
+            logs.update(get_logicals(dem_instr))
+
+    return logs
