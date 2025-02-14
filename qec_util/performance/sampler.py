@@ -9,7 +9,6 @@ import stim
 FILE_LOCKING = False
 try:
     import fcntl
-
     FILE_LOCKING = True
 except:
     pass
