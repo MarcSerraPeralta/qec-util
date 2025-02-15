@@ -6,6 +6,7 @@ from qec_util.dem_instrs import (
     has_separator,
     sorted_dem_instr,
     remove_detectors,
+    get_labels_from_detectors,
 )
 
 
@@ -108,4 +109,13 @@ def test_sorted_dem_instr():
         output = sorted_dem_instr(instr)
         assert output == exp_instr
 
+    return
+
+
+def test_get_labels_from_detectors():
+    anc_coords = {"X2": [1, 0.0]}
+    det_coords = {13: [1, 0.0, 3]}
+    assert get_labels_from_detectors(
+        [13], det_coords=det_coords, anc_coords=anc_coords
+    ) == [("X2", 3)]
     return

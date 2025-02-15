@@ -6,6 +6,7 @@ from .dem_instrs import (
     decomposed_logicals,
     remove_detectors,
     sorted_dem_instr,
+    get_labels_from_detectors,
 )
 from .util import xor_probs, xor_lists
 
@@ -20,4 +21,5 @@ __all__ = [
     "xor_lists",
     "remove_detectors",
     "sorted_dem_instr",
+    "get_labels_from_detectors",
 ]

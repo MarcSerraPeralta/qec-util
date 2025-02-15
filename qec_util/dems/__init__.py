@@ -8,6 +8,7 @@ from .dems import (
     get_flippable_logicals,
     contains_only_edges,
 )
+from ..dem_instrs import get_labels_from_detectors
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "get_flippable_detectors",
     "get_flippable_logicals",
     "contains_only_edges",
+    "get_labels_from_detectors",
 ]
