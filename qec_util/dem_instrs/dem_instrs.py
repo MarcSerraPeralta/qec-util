@@ -167,3 +167,43 @@ def sorted_dem_instr(dem_instr: stim.DemInstruction) -> stim.DemInstruction:
     return stim.DemInstruction(
         type="error", targets=dets_target + logs_target, args=prob
     )
+
+
+def get_labels_from_detectors(
+    det_inds: Iterable[int],
+    det_coords: dict[int, tuple[float, ...]],
+    anc_coords: dict[str, tuple[float, ...]],
+) -> list[tuple[str, int]]:
+    """Returns the pairs ``(qubit_label, round)`` for the given detector indices.
+
+    Parameters
+    ----------
+    det_inds
+        Detector indices
+    det_coords
+        Coordinates ``(..., time)`` of the detectors.
+        It can be generated from ``stim.Circuit.get_detector_coordinates`` or
+        ``stim.DetectorErrorModel.get_detector_coordinates``.
+    anc_coords
+        Coordinates ``(...)`` of the ancillas. It can be generated from
+        ``surface_sim.Layout.anc_coords``.
+
+    Returns
+    -------
+    labels
+        Pairs of ``(qubit_label, round)`` for the given detector indices.
+    """
+    if set(det_inds) > set(det_coords):
+        raise ValueError(
+            "Not all specified detector indices are present in `det_coords`."
+        )
+
+    # ensure the correct format for the coords
+    coords_to_anc = {tuple(float(i) for i in v): k for k, v in anc_coords.items()}
+    labels = []
+    for ind in det_inds:
+        # ensure the correct format for the coords
+        coords = tuple(float(i) for i in det_coords[ind])
+        labels.append((coords_to_anc[coords[:-1]], coords[-1]))
+
+    return labels
