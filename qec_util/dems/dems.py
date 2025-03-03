@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import stim
 import networkx as nx
 
@@ -231,3 +233,128 @@ def contains_only_edges(dem: stim.DetectorErrorModel) -> bool:
         if (dem_instr.type == "error") and len(get_detectors(dem_instr)) > 2:
             return False
     return True
+
+
+def convert_logical_to_detector(
+    dem: stim.DetectorErrorModel, logical_id: int, detector_id: int | None = None
+) -> stim.DetectorErrorModel:
+    """Converts the specified logical into a detector in the specified DEM.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    logical_id
+        Logical index of the observable to convert into a detector.
+    detector_id
+        Detector index to which the ``logical_id`` will be converted.
+        By default ``None``, which sets ``detector_id = dem.num_detectors``.
+
+    Returns
+    -------
+    new_dem
+        Detector error model with ``logical_id`` converted to ``detector_id``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if not isinstance(logical_id, int):
+        raise TypeError(f"'logical' must be an int, but {type(logical_id)} was given.")
+    if detector_id is None:
+        detector_id = dem.num_detectors
+    if not isinstance(detector_id, int):
+        raise TypeError(
+            f"'detector_id' must be an int, but {type(detector_id)} was given."
+        )
+
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type == "error":
+            detectors = list(get_detectors(instr))
+            logicals = list(get_logicals(instr))
+
+            if logical_id in logicals:
+                detectors.append(detector_id)
+                logicals.pop(logical_id)
+
+            new_detectors = [stim.target_relative_detector_id(d) for d in detectors]
+            new_logicals = [stim.target_logical_observable_id(l) for l in logicals]
+            targets = new_detectors + new_logicals
+
+            new_instr = stim.DemInstruction(
+                type="error",
+                args=instr.args_copy(),
+                targets=targets,
+            )
+            new_dem.append(new_instr)
+        elif instr.type == "logical_observable":
+            if logical_id != instr.targets_copy()[0].val:
+                new_dem.append(instr)
+
+            new_instr = stim.DemInstruction(
+                type="detector",
+                args=[],
+                targets=[stim.target_relative_detector_id(detector_id)],
+            )
+            new_dem.append(new_instr)
+        elif instr.type == "detector":
+            new_dem.append(instr)
+        else:
+            raise ValueError(f"Instruction type '{instr.type}' unknown.")
+
+    return new_dem
+
+
+def get_errors_triggering_detectors(
+    dem: stim.DetectorErrorModel, detectors: None | Sequence[int] = None
+) -> dict[int, list[int]]:
+    """Returns a dictionary that lists all errors that flip each
+    specified detector.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    detectors
+        Detectors for which to compute which errors flip them.
+        By default ``None``, which corresponds to all the detectors in ``dem``.
+
+    Returns
+    -------
+    support
+        Dictionary with keys corresponding to ``detectors`` and values corresponding
+        the errors that flip the given detector. The errors are repesented as
+        indices, corresponding to ``dem.flattened()[i]``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if detectors is None:
+        detectors = list(range(dem.num_detectors))
+    if not isinstance(detectors, Sequence):
+        raise TypeError(
+            f"'detectors' must be a sequence, but {type(detectors)} was given."
+        )
+
+    support = {d: [] for d in detectors}
+    for error_id, instr in enumerate(dem.flattened()):
+        if instr.type != "error":
+            continue
+
+        dets = get_detectors(instr)
+        for det in dets:
+            if det in detectors:
+                support[det].append(error_id)
+
+    return support
+
+
+def only_errors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
+    """Returns the corresponding dem with only error instructions."""
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type == "error":
+            new_dem.append(instr)
+    return new_dem
