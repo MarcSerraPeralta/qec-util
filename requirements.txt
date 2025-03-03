@@ -14,6 +14,8 @@ dill==0.3.8
     # via lmfit
 fonttools==4.53.1
     # via matplotlib
+gurobipy==12.0.1
+    # via qec-util (pyproject.toml)
 kiwisolver==1.4.5
     # via matplotlib
 lmfit==1.3.2
@@ -53,7 +55,9 @@ pytz==2024.1
 pyyaml==6.0.2
     # via qec-util (pyproject.toml)
 scipy==1.14.0
-    # via lmfit
+    # via
+    #   lmfit
+    #   qec-util (pyproject.toml)
 six==1.16.0
     # via
     #   python-dateutil

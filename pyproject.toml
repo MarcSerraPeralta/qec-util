@@ -25,6 +25,8 @@ dependencies = [
     "lmfit",
     "stim",
     "python-sat",
+    "gurobipy",
+    "scipy", # dependency for gurobipy not installed automatically
 ]
 
 [tool.setuptools.packages.find]
