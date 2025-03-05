@@ -1,6 +1,7 @@
 import stim
 
 from qec_util.distance import get_circuit_distance, get_circuit_distance_logical
+from qec_util.dem_instrs import get_logicals, get_detectors
 
 
 def test_get_circuit_distance():
@@ -32,5 +33,15 @@ def test_get_circuit_distance_logical():
     assert d_circ == 3
     assert isinstance(errors, stim.DetectorErrorModel)
     assert len(errors) == d_circ
+
+    for error in errors:
+        assert error in dem
+
+    dets, logs = set(), set()
+    for error in errors:
+        dets.symmetric_difference_update(get_detectors(error))
+        logs.symmetric_difference_update(get_logicals(error))
+    assert dets == set()
+    assert logs != set()
 
     return
