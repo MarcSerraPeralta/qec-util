@@ -80,11 +80,16 @@ def get_circuit_distance_logical(
     errors
         Set of faults that makes the circuit distance be ``d_circ``.
     """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    dem = dem.flattened()
+    dem = only_errors(dem)
     logical_det_id = dem.num_detectors
     new_dem = convert_logical_to_detector(
         dem, logical_id=logical_id, detector_id=logical_det_id
     )
-    new_dem = only_errors(new_dem)
     det_support = get_errors_triggering_detectors(new_dem)
 
     # define model
@@ -100,6 +105,8 @@ def get_circuit_distance_logical(
 
     # add constraints
     for det_id, support in det_support.items():
+        if len(support) == 0:
+            continue
         defect = 1 if det_id == logical_det_id else 0
         support = np.array(support)
 
@@ -129,6 +136,6 @@ def get_circuit_distance_logical(
     d_circ = len(error_ids)
     errors = stim.DetectorErrorModel()
     for error_id in error_ids:
-        errors.append(new_dem[error_id])
+        errors.append(dem[error_id])
 
     return d_circ, errors
