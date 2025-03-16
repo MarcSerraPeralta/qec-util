@@ -10,8 +10,10 @@ from .dems import (
     convert_logical_to_detector,
     get_errors_triggering_detectors,
     only_errors,
+    remove_hyperedges,
 )
 from ..dem_instrs import get_labels_from_detectors
+from .decompose_dem import decompose_hyperedges_to_edges
 
 
 __all__ = [
@@ -23,8 +25,10 @@ __all__ = [
     "get_flippable_detectors",
     "get_flippable_logicals",
     "contains_only_edges",
-    "get_labels_from_detectors",
     "convert_logical_to_detector",
     "get_errors_triggering_detectors",
     "only_errors",
+    "remove_hyperedges",
+    "get_labels_from_detectors",
+    "decompose_hyperedges_to_edges",
 ]
