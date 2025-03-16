@@ -353,8 +353,32 @@ def get_errors_triggering_detectors(
 
 def only_errors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
     """Returns the corresponding dem with only error instructions."""
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
     new_dem = stim.DetectorErrorModel()
     for instr in dem.flattened():
         if instr.type == "error":
             new_dem.append(instr)
+    return new_dem
+
+
+def remove_hyperedges(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
+    """Removes the hyperedges from the given DEM."""
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            new_dem.append(instr)
+            continue
+
+        if len(get_detectors(instr)) <= 2:
+            new_dem.append(instr)
+
     return new_dem
