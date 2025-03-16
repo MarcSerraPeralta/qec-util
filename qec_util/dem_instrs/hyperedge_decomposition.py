@@ -45,7 +45,8 @@ def decompose_hyperedge_to_edges(
     for instr in dem_edges:
         if instr.type != "error" or len(get_detectors(instr)) > 2:
             raise TypeError(
-                f"'dem_edges' must only contain edge errors, but {instr} was found."
+                f"'dem_edges' must only contain edge errors, but {instr} was found. "
+                "Use 'remove_hyperedges(only_edges(dem))' to only have edge errors."
             )
     detectors = get_detectors(hyperedge)
     if max(detectors) > dem_edges.num_errors:
