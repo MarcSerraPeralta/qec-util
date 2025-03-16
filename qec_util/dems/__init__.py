@@ -13,7 +13,7 @@ from .dems import (
     remove_hyperedges,
 )
 from ..dem_instrs import get_labels_from_detectors
-from .decompose_dem import decompose_hyperedges_to_edges
+from .hyperedge_decomposition import decompose_hyperedges_to_edges
 
 
 __all__ = [
