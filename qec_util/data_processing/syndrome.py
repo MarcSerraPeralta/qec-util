@@ -1,5 +1,3 @@
-from typing import Optional
-
 from xarray import DataArray
 
 
@@ -27,7 +25,7 @@ def get_syndromes(anc_meas: DataArray) -> DataArray:
     return syndromes
 
 
-def get_defects(syndromes: DataArray, frame: Optional[DataArray] = None) -> DataArray:
+def get_defects(syndromes: DataArray, frame: DataArray | None = None) -> DataArray:
     """Returns the defects from the syndrome outcomes for a memory experiment.
 
     Parameters

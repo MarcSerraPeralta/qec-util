@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -8,8 +6,8 @@ def plot_line_threshold(
     ax: plt.Axes,
     phys_prob: np.ndarray,
     log_prob: np.ndarray,
-    log_prob_lower: Optional[np.ndarray] = None,
-    log_prob_upper: Optional[np.ndarray] = None,
+    log_prob_lower: np.ndarray | None = None,
+    log_prob_upper: np.ndarray | None = None,
     **kargs,
 ) -> plt.Axes:
     """Plots the logical error probability as a function of the physiscal
@@ -50,7 +48,7 @@ def plot_line_threshold(
     ax.set_xlabel("physical error probability, $p$")
     ax.set_ylabel("logical error probability, $p_L$")
 
-    if ("label" in kargs_) and (kargs_["label"] is not None):
+    if kargs_.get("label") is not None:
         ax.legend(loc="best")
 
     return ax
