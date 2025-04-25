@@ -278,3 +278,28 @@ def read_failures_from_file(
                 return num_failures, num_samples, extra_metrics
 
     return num_failures, num_samples, extra_metrics
+
+
+def merge_batches_in_file(file_name: str | pathlib.Path) -> None:
+    """Merges all the batches in the given file into a single batch,
+    which reduces the size of the file.
+
+    Parameters
+    ----------
+    file_name
+        Name of the file with the data.
+        The structure of the file is specified in the Notes and the intended
+        usage is for the ``sample_failures`` function.
+    """
+    num_failures, num_samples, extra_metrics = read_failures_from_file(
+        file_name=file_name
+    )
+
+    with open(file_name, "w") as file:
+        extra_str = ""
+        if len(extra_metrics) != 0:
+            extra_str = " | " + " ".join([f"{m}" for m in extra_metrics])
+
+        file.write(f"{num_failures} {num_samples}{extra_str}\n")
+
+    return
