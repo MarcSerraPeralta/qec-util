@@ -5,7 +5,7 @@ from .metrics import (
     lmfit_par_to_ufloat,
     confidence_interval_binomial,
 )
-from .samplers import sample_failures, read_failures_from_file
+from .samplers import sample_failures, read_failures_from_file, merge_batches_in_file
 from . import plots
 
 __all__ = [
@@ -16,5 +16,6 @@ __all__ = [
     "confidence_interval_binomial",
     "sample_failures",
     "read_failures_from_file",
+    "merge_batches_in_file",
     "plots",
 ]
