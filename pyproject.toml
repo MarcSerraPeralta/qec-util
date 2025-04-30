@@ -27,6 +27,7 @@ dependencies = [
     "python-sat",
     "gurobipy",
     "scipy", # dependency for gurobipy not installed automatically
+    "pymatching",
 ]
 
 [tool.setuptools.packages.find]
@@ -34,4 +35,4 @@ include = ["qec_util", "qec_util.*"]  # package names should match these glob pa
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [project.optional-dependencies]
-dev = ["pip-tools", "pytest", "scalene", "black", "pytest-black", "pymatching"]
+dev = ["pip-tools", "pytest", "scalene", "black", "pytest-black"]
