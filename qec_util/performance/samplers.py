@@ -19,11 +19,11 @@ def sample_failures(
     dem: stim.DetectorErrorModel,
     decoder,
     min_failures: int | float = 0,
-    max_failures: int | float = 100,
+    max_failures: int | float = np.inf,
     min_time: int | float = 0,
     max_time: int | float = np.inf,
     min_samples: int | float = 0,
-    max_samples: int | float = 1_000_000,
+    max_samples: int | float = np.inf,
     batch_size: int | np.float64 | float | None = None,
     max_batch_size: int | float = np.inf,
     file_name: str | pathlib.Path | None = None,
@@ -48,18 +48,18 @@ def sample_failures(
         Minimum number of failures to reach before being able to stop the sampling.
     max_failures
         Maximum number of failures to reach before stopping the calculation.
-        Set this parameter to ``np.inf`` to not have any restriction on the
+        By default ``np.inf`` to not have any restriction on the
         maximum number of failures.
     min_time
         Minimum duration for this function (in seconds) before being able to stop the sampling.
     max_time
-        Maximum duration for this function, in seconds. By default, this
-        parameter is set to ``np.inf`` to not place any restriction on runtime.
+        Maximum duration for this function, in seconds.
+        By default``np.inf`` to not place any restriction on runtime.
     min_failures
         Minimum number of samples to reach before being able to stop the sampling.
     max_samples
         Maximum number of samples to reach before stopping the calculation.
-        Set this parameter to ``np.inf`` to not have any restriction on the
+        By default ``np.inf`` to not have any restriction on the
         maximum number of samples.
     batch_size
         Number of samples to decode per batch. If ``None``, it estimates
@@ -115,6 +115,10 @@ def sample_failures(
         )
     if "decode_batch" not in dir(decoder):
         raise TypeError("'decoder' does not have a 'decode_batch' method.")
+    if max_samples == max_time == max_failures == np.inf:
+        raise ValueError(
+            "One of 'max_samples', 'max_time', or 'max_failures' must be non infinite."
+        )
 
     num_failures, num_samples = 0, 0
 
