@@ -10,6 +10,7 @@ from ..dems import (
     only_errors,
     get_errors_triggering_detectors,
 )
+from ..circuits import remove_gauge_detectors
 
 
 def get_circuit_distance(circuit: stim.Circuit) -> int:
@@ -33,25 +34,10 @@ def get_circuit_distance(circuit: stim.Circuit) -> int:
         )
 
     # remove gauge detectors from experiment (if not, it doesn't work)
-    dem = circuit.detector_error_model(allow_gauge_detectors=True)
-    gauge_dets = []
-    for line in dem.flattened():
-        if line.type == "error" and line.args_copy()[0] == 0.5:
-            gauge_dets += line.targets_copy()
-    gauge_dets = [d.val for d in gauge_dets]
-
-    new_circuit = stim.Circuit()
-    det_counter = -1
-    for line in circuit.flattened():
-        if line.name == "DETECTOR":
-            det_counter += 1
-            if det_counter in gauge_dets:
-                continue
-
-        new_circuit.append(line)
+    circuit = remove_gauge_detectors(circuit)
 
     # solve SAT problem
-    wcnf_string = new_circuit.shortest_error_sat_problem()
+    wcnf_string = circuit.shortest_error_sat_problem()
     wcnf = WCNF(from_string=wcnf_string)
     with RC2(wcnf) as rc2:
         rc2.compute()
