@@ -76,7 +76,7 @@ def remove_detectors_except(
     return new_circuit
 
 
-def logicals_to_detectors(circuit: stim.Circuit) -> stim.Circuit:
+def observables_to_detectors(circuit: stim.Circuit) -> stim.Circuit:
     """Converts the logical observables of a circuit to detectors."""
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
@@ -91,5 +91,35 @@ def logicals_to_detectors(circuit: stim.Circuit) -> stim.Circuit:
         args = instr.gate_args_copy()
         new_instr = stim.CircuitInstruction("DETECTOR", gate_args=args, targets=targets)
         new_circuit.append(new_instr)
+
+    return new_circuit
+
+
+def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
+    """
+    Move all the observable definition to the end of the circuit
+    while keeping their relative order.
+    """
+    new_circuit = stim.Circuit()
+    obs = []
+    # moving the definition of the observables messes with the rec[-i] definition
+    # therefore I need to take care of how many measurements are between the definition
+    # and the end of the circuit (where I am going to define the deterministic observables)
+    measurements = []
+    for i, instr in enumerate(circuit.flattened()):
+        if instr.name == "OBSERVABLE_INCLUDE":
+            obs.append(instr)
+            measurements.append(circuit[i:].num_measurements)
+            continue
+
+        new_circuit.append(instr)
+
+    for k, ob in enumerate(obs):
+        new_targets = [t.value - measurements[k] for t in ob.targets_copy()]
+        new_targets = [stim.target_rec(t) for t in new_targets]
+        new_ob = stim.CircuitInstruction(
+            "OBSERVABLE_INCLUDE", new_targets, ob.gate_args_copy()
+        )
+        new_circuit.append(new_ob)
 
     return new_circuit
