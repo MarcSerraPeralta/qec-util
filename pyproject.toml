@@ -28,6 +28,7 @@ dependencies = [
     "gurobipy",
     "scipy", # dependency for gurobipy not installed automatically
     "pymatching",
+    "dem_decoders",
 ]
 
 [tool.setuptools.packages.find]

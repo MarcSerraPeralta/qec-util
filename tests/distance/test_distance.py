@@ -1,6 +1,10 @@
 import stim
 
-from qec_util.distance import get_circuit_distance, get_circuit_distance_logical
+from qec_util.distance import (
+    get_circuit_distance,
+    get_circuit_distance_logical,
+    get_upper_bound_circuit_distance,
+)
 from qec_util.dem_instrs import get_logicals, get_detectors
 
 
@@ -43,5 +47,28 @@ def test_get_circuit_distance_logical():
         logs.symmetric_difference_update(get_logicals(error))
     assert dets == set()
     assert logs != set()
+
+    return
+
+
+def test_get_upper_bound_circuit_distance():
+    circuit = stim.Circuit.generated(
+        code_task="surface_code:rotated_memory_z",
+        distance=3,
+        rounds=3,
+        after_clifford_depolarization=0.01,
+    )
+    dem = circuit.detector_error_model()
+
+    d_circ, error = get_upper_bound_circuit_distance(dem)
+
+    assert d_circ == 3
+
+    syndrome, logical = set(), set()
+    for fault in error:
+        syndrome.symmetric_difference_update(get_detectors(fault))
+        logical.symmetric_difference_update(get_logicals(fault))
+    assert len(syndrome) == 0
+    assert len(logical) != 0
 
     return

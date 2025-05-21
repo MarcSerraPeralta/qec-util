@@ -10,7 +10,7 @@ from qec_util.dems import (
     get_flippable_detectors,
     get_flippable_logicals,
     contains_only_edges,
-    convert_logical_to_detector,
+    convert_observables_to_detectors,
     get_errors_triggering_detectors,
     only_errors,
 )
@@ -263,7 +263,7 @@ def test_contains_only_edges():
     return
 
 
-def test_convert_logical_to_detector():
+def test_convert_observables_to_detectors():
     dem = stim.DetectorErrorModel(
         """
         error(1) D2 D3 L0
@@ -273,7 +273,7 @@ def test_convert_logical_to_detector():
         """
     )
 
-    new_dem = convert_logical_to_detector(dem, 0, 123)
+    new_dem = convert_observables_to_detectors(dem, [0], [123])
 
     expected_dem = stim.DetectorErrorModel(
         """
@@ -281,6 +281,26 @@ def test_convert_logical_to_detector():
         error(0.1) D1 L1
         detector(1, 1.1) D0
         detector D123
+        """
+    )
+
+    assert new_dem == expected_dem
+
+    dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1 L1
+        detector(1, 1.1) D0
+        """
+    )
+
+    new_dem = convert_observables_to_detectors(dem)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 D4
+        error(0.1) D1 D5
+        detector(1, 1.1) D0
         """
     )
 
