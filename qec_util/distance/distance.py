@@ -1,16 +1,23 @@
+from itertools import product
 import numpy as np
 import stim
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 import gurobipy as gp
 from gurobipy import GRB
+from dem_decoders import BP_OSD
 
 from ..dems import (
-    convert_logical_to_detector,
+    convert_observables_to_detectors,
     only_errors,
     get_errors_triggering_detectors,
 )
 from ..circuits import remove_gauge_detectors
+
+
+class Decoder:
+    def __init__(self, dem: stim.DetectorErrorModel, **kargs) -> None: ...
+    def decode_to_faults_array(self, syndrome: np.ndarray) -> np.ndarray: ...
 
 
 def get_circuit_distance(circuit: stim.Circuit) -> int:
@@ -72,9 +79,9 @@ def get_circuit_distance_logical(
         )
     dem = dem.flattened()
     dem = only_errors(dem)
-    logical_det_id = dem.num_detectors
-    new_dem = convert_logical_to_detector(
-        dem, logical_id=logical_id, detector_id=logical_det_id
+    obs_det_ind = dem.num_detectors
+    new_dem = convert_observables_to_detectors(
+        dem, obs_inds=[logical_id], det_inds=[obs_det_ind]
     )
     det_support = get_errors_triggering_detectors(new_dem)
 
@@ -93,7 +100,7 @@ def get_circuit_distance_logical(
     for det_id, support in det_support.items():
         if len(support) == 0:
             continue
-        defect = 1 if det_id == logical_det_id else 0
+        defect = 1 if det_id == obs_det_ind else 0
         support = np.array(support)
 
         model.addConstr(
@@ -125,3 +132,65 @@ def get_circuit_distance_logical(
         errors.append(dem[error_id])
 
     return d_circ, errors
+
+
+def get_upper_bound_circuit_distance(
+    dem: stim.DetectorErrorModel, decoder: type[Decoder] = BP_OSD, **kargs
+) -> tuple[int, stim.DetectorErrorModel]:
+    """Returns an upper bound for the circuit distance.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    decoder
+        Decoder used to obtain the upper bound. The inputs for the initialization
+        must be ``dem`` and ``**kargs``. It must have the ``decode_to_faults_array``
+        which must return an array of the predicted faults/errors for the given syndrome.
+    **kargs
+        Extra arguments for the initialization of the decoder with ``dem``.
+
+    Returns
+    -------
+    int
+        Upper bound for the circuit distance.
+    error
+        Error corresponding to the upper bound.
+    """
+    if kargs == {} and decoder == BP_OSD:
+        # default arguments for BP_OSD
+        kargs = {
+            "max_iter": 50,
+            "bp_method": "ps",
+            "osd_order": 5,
+            "osd_method": "osd_cs",
+        }
+
+    num_obs = dem.num_observables
+    if num_obs == 0:
+        raise ValueError("'dem' does not contain any logical observable.")
+
+    dem = dem.flattened()
+    new_dem = convert_observables_to_detectors(dem)
+    decoder_dem = decoder(new_dem, **kargs)
+
+    num_faults = np.inf
+    for comb in product([False, True], repeat=num_obs):
+        if not any(comb):
+            # skip [0,0,0...] case
+            continue
+
+        syndrome = np.zeros(new_dem.num_detectors, dtype=bool)
+        syndrome[-num_obs:] = np.array(comb, dtype=bool)
+
+        faults = decoder_dem.decode_to_faults_array(syndrome)
+        if np.sum(faults) > num_faults:
+            continue
+
+        fault_inds = np.where(faults)[0]
+        error = stim.DetectorErrorModel()
+        for fault_ind in fault_inds:
+            error += dem[fault_ind : fault_ind + 1]  # object is a DetectorErrorModel
+        num_faults = len(error)
+
+    return num_faults, error

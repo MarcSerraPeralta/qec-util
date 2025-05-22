@@ -235,38 +235,46 @@ def contains_only_edges(dem: stim.DetectorErrorModel) -> bool:
     return True
 
 
-def convert_logical_to_detector(
-    dem: stim.DetectorErrorModel, logical_id: int, detector_id: int | None = None
+def convert_observables_to_detectors(
+    dem: stim.DetectorErrorModel,
+    obs_inds: Sequence[int] | None = None,
+    det_inds: Sequence[int] | None = None,
 ) -> stim.DetectorErrorModel:
-    """Converts the specified logical into a detector in the specified DEM.
+    """Converts the specified observables into a detector in the specified DEM.
 
     Parameters
     ----------
     dem
         Detector error model.
-    logical_id
-        Logical index of the observable to convert into a detector.
-    detector_id
-        Detector index to which the ``logical_id`` will be converted.
-        By default ``None``, which sets ``detector_id = dem.num_detectors``.
+    obs_inds
+        List of indices of the observables to convert into detectors.
+        By default ``None``, which converts all the observables to detectors.
+    det_inds
+        List of detector indices to which the ``obs_inds`` will be converted.
+        By default ``None``, which sets
+        ``det_inds = [dem.num_detectors + i for i, _ in enumerate(obs_inds)]``.
 
     Returns
     -------
     new_dem
-        Detector error model with ``logical_id`` converted to ``detector_id``.
+        Detector error model with ``obs_inds`` converted to ``det_inds``.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
-    if not isinstance(logical_id, int):
-        raise TypeError(f"'logical' must be an int, but {type(logical_id)} was given.")
-    if detector_id is None:
-        detector_id = dem.num_detectors
-    if not isinstance(detector_id, int):
-        raise TypeError(
-            f"'detector_id' must be an int, but {type(detector_id)} was given."
-        )
+    if obs_inds is None:
+        obs_inds = list(range(dem.num_observables))
+    if not isinstance(obs_inds, list):
+        raise TypeError(f"'obs_inds' must be an list, but {type(obs_inds)} was given.")
+    if any(not isinstance(o, int) for o in obs_inds):
+        raise TypeError("Each element in 'obs_inds' must be an integer.")
+    if det_inds is None:
+        det_inds = [dem.num_detectors + i for i, _ in enumerate(obs_inds)]
+    if not isinstance(det_inds, list):
+        raise TypeError(f"'det_inds' must be an list, but {type(det_inds)} was given.")
+    if any(not isinstance(d, int) for d in det_inds):
+        raise TypeError("Each element in 'det_inds' must be an integer.")
 
     new_dem = stim.DetectorErrorModel()
     for instr in dem.flattened():
@@ -274,9 +282,10 @@ def convert_logical_to_detector(
             detectors = list(get_detectors(instr))
             logicals = list(get_logicals(instr))
 
-            if logical_id in logicals:
-                detectors.append(detector_id)
-                logicals.pop(logical_id)
+            for obs_ind, det_ind in zip(obs_inds, det_inds):
+                if obs_ind in logicals:
+                    detectors.append(det_ind)
+                    logicals.remove(obs_ind)
 
             new_detectors = [stim.target_relative_detector_id(d) for d in detectors]
             new_logicals = [stim.target_logical_observable_id(l) for l in logicals]
@@ -289,13 +298,15 @@ def convert_logical_to_detector(
             )
             new_dem.append(new_instr)
         elif instr.type == "logical_observable":
-            if logical_id != instr.targets_copy()[0].val:
+            obs_ind = instr.targets_copy()[0].val
+            if obs_ind not in obs_inds:
                 new_dem.append(instr)
 
+            det_ind = det_inds[obs_inds.index(obs_ind)]
             new_instr = stim.DemInstruction(
                 type="detector",
                 args=[],
-                targets=[stim.target_relative_detector_id(detector_id)],
+                targets=[stim.target_relative_detector_id(det_ind)],
             )
             new_dem.append(new_instr)
         elif instr.type == "detector":
