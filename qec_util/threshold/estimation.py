@@ -241,7 +241,7 @@ def _least_square_fit(
         p_thr, mu, func_args = args[0], args[1], args[2:]
         return func(_rescale_input(ps, ds, p_thr, mu), *func_args)
 
-    popt, pcov, info, msg, ier = curve_fit(
+    popt, pcov = curve_fit(
         rescaled_func,
         (phys_err, distances),
         log_err,
@@ -249,11 +249,6 @@ def _least_square_fit(
         sigma=sigma,
         absolute_sigma=absolute_sigma,
         maxfev=maxfev,
-        full_output=True,
-        epsfcn=np.finfo(np.float64).eps,
         **kargs,
     )
-    print(msg)
-    print(ier)
-    print(info)
     return popt[0], pcov[0, 0]
