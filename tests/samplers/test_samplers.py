@@ -4,7 +4,7 @@ import numpy as np
 import stim
 from pymatching import Matching
 
-from qec_util.performance import (
+from qec_util.samplers import (
     sample_failures,
     read_failures_from_file,
     merge_batches_in_file,
