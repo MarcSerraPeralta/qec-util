@@ -1,0 +1,196 @@
+from itertools import product
+import numpy as np
+import stim
+from pysat.examples.rc2 import RC2
+from pysat.formula import WCNF
+import gurobipy as gp
+from gurobipy import GRB
+from dem_decoders import BP_OSD
+
+from ..dems import (
+    convert_observables_to_detectors,
+    only_errors,
+    get_errors_triggering_detectors,
+)
+from ..circuits import remove_gauge_detectors
+
+
+class Decoder:
+    def __init__(self, dem: stim.DetectorErrorModel, **kargs) -> None: ...
+    def decode_to_faults_array(self, syndrome: np.ndarray) -> np.ndarray: ...
+
+
+def get_circuit_distance(circuit: stim.Circuit) -> int:
+    """Returns the circuit distance of the given circuit.
+
+    Note that the SAT solver can take some time.
+
+    Parameters
+    ----------
+    circuit
+        Stim circuit.
+
+    Returns
+    -------
+    d_circ
+        Circuit distance of the given circuit.
+    """
+    if not isinstance(circuit, stim.Circuit):
+        raise ValueError(
+            "'circuit' must be a 'stim.Circuit', " f"but {type(circuit)} was given."
+        )
+
+    # remove gauge detectors from experiment (if not, it doesn't work)
+    circuit = remove_gauge_detectors(circuit)
+
+    # solve SAT problem
+    wcnf_string = circuit.shortest_error_sat_problem()
+    wcnf = WCNF(from_string=wcnf_string)
+    with RC2(wcnf) as rc2:
+        rc2.compute()
+        d_circ = rc2.cost
+
+    return d_circ
+
+
+def get_circuit_distance_observable(
+    dem: stim.DetectorErrorModel, obs_ind: int
+) -> tuple[int, stim.DetectorErrorModel]:
+    """Returns the minimum number of faults to flip the specified logical
+    observable without triggering any detectors given the detector error model.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    obs_ind
+        Index of the logical observable in the ``dem``.
+
+    Returns
+    -------
+    d_circ
+        Circuit distance of the ``obs_ind``.
+    errors
+        Set of faults that makes the circuit distance be ``d_circ``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    dem = dem.flattened()
+    dem = only_errors(dem)
+    obs_det_ind = dem.num_detectors
+    new_dem = convert_observables_to_detectors(
+        dem, obs_inds=[obs_ind], det_inds=[obs_det_ind]
+    )
+    det_support = get_errors_triggering_detectors(new_dem)
+
+    # define model
+    model = gp.Model("milp")
+    model.Params.OutputFlag = 0
+    model.Params.LogToConsole = 0
+
+    # define variables
+    errors = model.addMVar(shape=new_dem.num_errors, vtype=GRB.BINARY, name="errors")
+    dummy = model.addMVar(
+        shape=new_dem.num_detectors, vtype=GRB.INTEGER, name="dummy", lb=0
+    )
+
+    # add constraints
+    for det_id, support in det_support.items():
+        if len(support) == 0:
+            continue
+        defect = 1 if det_id == obs_det_ind else 0
+        support = np.array(support)
+
+        model.addConstr(
+            errors[support] @ np.ones_like(support) - 2 * dummy[det_id] == defect,
+            f"syndrome{det_id}",
+        )
+
+    # define cost function to maximize
+    obj_fn = 0
+    for k in range(new_dem.num_errors):
+        obj_fn += errors[k]
+    model.setObjective(obj_fn, GRB.MINIMIZE)
+
+    # update model to build the contraints and cost function
+    model.update()
+
+    # solve MILP problem
+    model.optimize()
+
+    # convert errors to stim.DetectorErrorModel (attribute 'x' has the numpy values)
+    error_vars = []
+    for k in range(new_dem.num_errors):
+        error_vars.append(model.getVarByName(f"errors[{k}]"))
+    error_ids = [k for k, v in enumerate(model.getAttr("X", error_vars)) if v]
+
+    d_circ = len(error_ids)
+    errors = stim.DetectorErrorModel()
+    for error_id in error_ids:
+        errors.append(dem[error_id])
+
+    return d_circ, errors
+
+
+def get_upper_bound_circuit_distance(
+    dem: stim.DetectorErrorModel, decoder: type[Decoder] = BP_OSD, **kargs
+) -> tuple[int, stim.DetectorErrorModel]:
+    """Returns an upper bound for the circuit distance.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    decoder
+        Decoder used to obtain the upper bound. The inputs for the initialization
+        must be ``dem`` and ``**kargs``. It must have the ``decode_to_faults_array``
+        which must return an array of the predicted faults/errors for the given syndrome.
+    **kargs
+        Extra arguments for the initialization of the decoder with ``dem``.
+
+    Returns
+    -------
+    int
+        Upper bound for the circuit distance.
+    error
+        Error corresponding to the upper bound.
+    """
+    if kargs == {} and decoder == BP_OSD:
+        # default arguments for BP_OSD
+        kargs = {
+            "max_iter": 50,
+            "bp_method": "ps",
+            "osd_order": 5,
+            "osd_method": "osd_cs",
+        }
+
+    num_obs = dem.num_observables
+    if num_obs == 0:
+        raise ValueError("'dem' does not contain any logical observable.")
+
+    dem = dem.flattened()
+    new_dem = convert_observables_to_detectors(dem)
+    decoder_dem = decoder(new_dem, **kargs)
+
+    num_faults = np.inf
+    for comb in product([False, True], repeat=num_obs):
+        if not any(comb):
+            # skip [0,0,0...] case
+            continue
+
+        syndrome = np.zeros(new_dem.num_detectors, dtype=bool)
+        syndrome[-num_obs:] = np.array(comb, dtype=bool)
+
+        faults = decoder_dem.decode_to_faults_array(syndrome)
+        if np.sum(faults) > num_faults:
+            continue
+
+        fault_inds = np.where(faults)[0]
+        error = stim.DetectorErrorModel()
+        for fault_ind in fault_inds:
+            error += dem[fault_ind : fault_ind + 1]  # object is a DetectorErrorModel
+        num_faults = len(error)
+
+    return num_faults, error
