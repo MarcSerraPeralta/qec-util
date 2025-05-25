@@ -1,13 +1,12 @@
 from collections.abc import Iterable
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from .util import get_fit_func, rescale_input
 
 
 def plot_threshold_fit(
-    ax: plt.Axes,
+    ax,
     fit_func_name: str,
     popt: np.ndarray,
     rescaled_phys_err_min: float | int = -3,
@@ -17,7 +16,7 @@ def plot_threshold_fit(
     label: str | None = "fit",
     legend_loc: str | None = "upper left",
     **kargs,
-) -> plt.Axes:
+):
     """
     Plots the fitted function from ``qec_util.threshold.get_threshold`` fit
     as a function of the rescaled physical error probability.
@@ -52,6 +51,11 @@ def plot_threshold_fit(
     -------
     ax
         The given axes with the plotted fit.
+
+    Notes
+    -----
+    This function requires ``matplotlibt``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     fit_func, num_params = get_fit_func(fit_func_name)
     if not isinstance(popt, Iterable):
@@ -80,7 +84,7 @@ def plot_threshold_fit(
 
 
 def plot_threshold_data(
-    ax: plt.Axes,
+    ax,
     data: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]],
     popt: np.ndarray,
     colors: dict[int, str | None] | None = None,
@@ -89,7 +93,7 @@ def plot_threshold_data(
     linestyles: dict[int, str | None] | None = None,
     legend_loc: str | None = "upper left",
     **kargs,
-) -> plt.Axes:
+):
     """
     Plots the data as a function of the rescaled physical error probability.
     It is known as the collapse plot.
@@ -127,6 +131,11 @@ def plot_threshold_data(
     -------
     ax
         The given axes with the plotted fit.
+
+    Notes
+    -----
+    This function requires ``matplotlibt``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     if not isinstance(data, dict):
         raise TypeError(f"'data' must be a dict, but {type(data)} was given.")

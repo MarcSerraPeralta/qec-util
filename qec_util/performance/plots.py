@@ -1,15 +1,14 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def plot_line_threshold(
-    ax: plt.Axes,
+    ax,
     phys_prob: np.ndarray,
     log_prob: np.ndarray,
     log_prob_lower: np.ndarray | None = None,
     log_prob_upper: np.ndarray | None = None,
     **kargs,
-) -> plt.Axes:
+):
     """Plots the logical error probability as a function of the physiscal
     error probability, including its upper and lower error bars (if given).
 
@@ -32,6 +31,11 @@ def plot_line_threshold(
     -------
     ax
         Matplotlib axis.
+
+    Notes
+    -----
+    This function requires ``matplotlib``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     kargs_ = dict(marker=".", linestyle="none")
     kargs_.update(kargs)

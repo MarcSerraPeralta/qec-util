@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import stim
-import networkx as nx
 
 from ..dem_instrs import get_detectors, get_observables, sorted_dem_instr
 
@@ -160,12 +159,21 @@ def get_max_weight_hyperedge(
 
 
 def disjoint_graphs(dem: stim.DetectorErrorModel) -> list[list[int]]:
-    """Return the nodes in the disjoint subgraphs that the DEM (or decoding
-    graph) can be split into."""
+    """
+    Return the nodes in the disjoint subgraphs that the DEM (or decoding
+    graph) can be split into.
+
+    Notes
+    -----
+    This function requires ``networkx``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
+    """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
+
+    import networkx as nx
 
     # convert stim.DetectorErrorModel to nx.Graph
     # to use the functionality 'nx.connected_components(G)'

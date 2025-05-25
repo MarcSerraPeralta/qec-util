@@ -18,17 +18,9 @@ license = {file = "LICENSE"}
 readme = "README.md"
 dependencies = [
     "numpy",
-    "xarray",
-    "matplotlib",
-    "pyyaml",
-    "networkx",
-    "lmfit",
     "stim",
-    "python-sat",
-    "gurobipy",
-    "scipy", # dependency for gurobipy not installed automatically
-    "pymatching",
-    "dem_decoders",
+    "lmfit",
+    "xarray",
 ]
 
 [tool.setuptools.packages.find]
@@ -36,4 +28,5 @@ include = ["qec_util", "qec_util.*"]  # package names should match these glob pa
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [project.optional-dependencies]
-dev = ["pip-tools", "pytest", "scalene", "black", "pytest-black"]
+dev = ["qec_util[all]", "pip-tools", "pytest", "scalene", "black", "pytest-black"]
+all = ["networkx", "python-sat", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib"]

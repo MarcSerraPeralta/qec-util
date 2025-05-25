@@ -2,7 +2,6 @@ from collections.abc import Callable
 
 import pathlib
 import numpy as np
-import yaml
 
 
 def get_fit_func(fit_func: str) -> tuple[Callable, int]:
@@ -52,7 +51,14 @@ def save_fit_information(
     if given the ``file_name`` parameter.
     The fit information is stored as a dictionary with the same keys as
     the arguments in this function.
+
+    Notes
+    -----
+    This function requires ``pyyaml``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
+    import yaml
+
     # ensure that they are np.ndarrays
     popt, pcov = np.array(popt), np.array(pcov)
     bootstrap_thresholds = np.array(bootstrap_thresholds)
@@ -78,7 +84,14 @@ def load_fit_information(
     """
     Returns 'fit_func_name', 'popt', 'pcov' and 'bootstrap_thresholds'.
     See 'save_fit_information' for more information.
+
+    Notes
+    -----
+    This function requires ``pyyaml``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
+    import yaml
+
     with open(file_name, "r") as file:
         data = yaml.safe_load(file)
 

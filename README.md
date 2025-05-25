@@ -11,12 +11,19 @@ A collection of utility methods and objects to aid with the simulation, decoding
 
 This package is available in PyPI, thus it can be installed using
 ```
-pip install qec-util
+pip install qec-util[all]
 ```
 or alternatively, it can be installed from source using
 ```
 git clone git@github.com:MarcSerraPeralta/qec-util.git
-pip install qec-util/
+cd qec-util
+pip install .[all]
+```
+The flag `[all]` is to install the requirements to be able to run all functionality from `qec_util`.
+If only specific functions are going to be used, it is recommended to run
+```
+pip install qec-util
+pip install ... # requirements specified in the Notes of the specific functions
 ```
 
 ## Setting up the gurobi license
