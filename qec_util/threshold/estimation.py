@@ -1,7 +1,11 @@
 from collections.abc import Iterable, Callable
+
+import pathlib
 import numpy as np
 import scipy.stats as stats
 from scipy.optimize import curve_fit
+
+from .util import get_fit_func, rescale_input, save_fit_information
 
 
 def get_threshold(
@@ -11,6 +15,7 @@ def get_threshold(
     conf_level: float = 0.975,
     params_guess: np.ndarray | None = None,
     weighted: bool = True,
+    file_name: str | pathlib.Path | None = None,
 ) -> tuple[float, float, float]:
     """Returns the threshold estimation and its confidence intervals using
     bootstrapping.
@@ -29,11 +34,11 @@ def get_threshold(
         Number of bootstrapping samples to take to estimate the confidence intervals.
         See Notes for more information about the bootstrapping procedure.
         If ``num_samples_bootstrap = 0``, the confidence intervals are not estimated.
-        By default, ``num_samples_bootstrap = 1000``.
+        By default ``1000``.
     conf_level
         Confidence level used when bootstrapping. If ``num_samples_bootstrap = 0``,
         then the confidence bounds returned correspond to one standard deviation.
-        By default, ``conf_level = 0.975``.
+        By default ``0.975``.
     params_guess
         Guess for the free parameters in the fit function specified by ``fit_func_name``
         and ``p_threshold`` and ``mu`` used in the rescaling. The vector is passed as
@@ -41,6 +46,11 @@ def get_threshold(
     weighted
         Use the standard deviation of the logical error probabilities when performing
         the fit.
+    file_name
+        Stores all information from the fit in a '.txt' file. If ``None``, it does
+        not store all information. This information is usef for e.g. plotting
+        the fit results, see ``qec_util.threshold.plot_threshold_fit``.
+        By default ``None``.
 
     Returns
     -------
@@ -115,7 +125,7 @@ def get_threshold(
             raise ValueError(
                 "Each numpy array triplet in the values of 'data' must be a vector."
             )
-    fit_func, num_params = _get_fit_func(fit_func_name)
+    fit_func, num_params = get_fit_func(fit_func_name)
     if (not isinstance(num_samples_bootstrap, int)) or num_samples_bootstrap < 0:
         raise TypeError(
             "'num_samples_bootstrap' must be a non-negative int, "
@@ -149,22 +159,30 @@ def get_threshold(
     ]
     log_err_std = np.array([dist.std() for dist in beta_dists])
 
+    # run once with the given data to get a good params_guess and if
+    # (1) num_samples_bootstrap = 0, or (2) file_name is not None
+    popt, pcov = _least_square_fit(
+        fit_func,
+        phys_err,
+        distances,
+        num_failures / num_samples,
+        p0=params_guess,
+        sigma=log_err_std if weighted else None,
+    )
     if num_samples_bootstrap == 0:
-        p_threshold, var = _least_square_fit(
-            fit_func,
-            phys_err,
-            distances,
-            num_failures / num_samples,
-            p0=params_guess,
-            sigma=log_err_std if weighted else None,
-        )
+        if file_name is not None:
+            save_fit_information(
+                file_name=file_name, popt=popt, pcov=pcov, fit_func_name=fit_func_name
+            )
+        p_threshold, var = popt[0], pcov[0, 0]
         ci_lower = np.max([p_threshold - np.sqrt(var), 0])
         ci_upper = p_threshold + np.sqrt(var)
         return p_threshold, ci_lower, ci_upper
 
     p_thresholds = np.zeros(num_samples_bootstrap)
+    params_guess = popt
     for k, _ in enumerate(p_thresholds):
-        new_p_threshold, _ = _least_square_fit(
+        popt_bootstrap, _ = _least_square_fit(
             fit_func,
             phys_err,
             distances,
@@ -172,7 +190,7 @@ def get_threshold(
             p0=params_guess,
             sigma=log_err_std if weighted else None,
         )
-        p_thresholds[k] = new_p_threshold
+        p_thresholds[k] = popt_bootstrap[0]
 
     p_threshold = p_thresholds.mean()
     p_thresholds.sort()
@@ -181,40 +199,16 @@ def get_threshold(
     if num_samples_bootstrap == 1:
         ci_lower, ci_upper = -np.inf, np.inf
 
+    if file_name is not None:
+        save_fit_information(
+            file_name=file_name,
+            popt=popt,
+            pcov=pcov,
+            fit_func_name=fit_func_name,
+            bootstrap_thresholds=p_thresholds,
+        )
+
     return p_threshold, ci_lower, ci_upper
-
-
-def _get_fit_func(fit_func: str) -> tuple[Callable, int]:
-    if fit_func == "tanh":
-
-        def tanh(x, a, b, c):
-            return a * (1 - (1 - 0.5 * (1 + np.tanh(b * x))) ** c)
-
-        return tanh, 3
-
-    elif len(fit_func) >= 5 and fit_func[:5] == "poly-":
-        order = fit_func[5:]
-        try:
-            order = int(order)
-        except ValueError:
-            raise ValueError(f"'{fit_func}' is not a valid name for 'poly' fit_func.")
-
-        def poly(x, *args):
-            return sum([args[i] * x**i for i in range(order + 1)])
-
-        return poly, order + 1
-
-    else:
-        raise ValueError(f"'{fit_func}' is not a valid name for 'fit_func'.")
-
-
-def _rescale_input(
-    phys_err: np.ndarray,
-    distances: np.ndarray,
-    p_threshold: np.ndarray | float,
-    mu: np.ndarray | float,
-) -> np.ndarray:
-    return (phys_err - p_threshold) * distances ** (1 / mu)
 
 
 def _least_square_fit(
@@ -227,7 +221,7 @@ def _least_square_fit(
     maxfev: int = 1_000_000,
     absolute_sigma: bool = True,
     **kargs,
-) -> tuple[float, float]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the estimated threshold from the fit to the given
     function once rescaled.
@@ -239,7 +233,7 @@ def _least_square_fit(
     def rescaled_func(x, *args):
         ps, ds = x[0], x[1]
         p_thr, mu, func_args = args[0], args[1], args[2:]
-        return func(_rescale_input(ps, ds, p_thr, mu), *func_args)
+        return func(rescale_input(ps, ds, p_thr, mu), *func_args)
 
     popt, pcov = curve_fit(
         rescaled_func,
@@ -251,4 +245,4 @@ def _least_square_fit(
         maxfev=maxfev,
         **kargs,
     )
-    return popt[0], pcov[0, 0]
+    return popt, pcov
