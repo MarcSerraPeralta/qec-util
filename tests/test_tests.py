@@ -6,6 +6,7 @@ DIR_EXCEPTIONS = ["__pycache__"]
 FILE_EXCEPTIONS = [
     "__init__.py",
     "qec_util/dem_instrs/util.py",
+    "qec_util/threshold/util.py",
 ]
 
 
