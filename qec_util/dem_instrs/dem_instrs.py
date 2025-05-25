@@ -24,7 +24,7 @@ def get_detectors(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
         )
 
 
-def get_logicals(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
+def get_observables(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
     """Returns the logical observable indices that are flipped in the given DEM instruction."""
     if not isinstance(dem_instr, stim.DemInstruction):
         raise TypeError(
@@ -34,7 +34,7 @@ def get_logicals(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
         raise ValueError(f"DemInstruction is not an error, it is {dem_instr.type}.")
 
     if has_separator(dem_instr):
-        return xor_lists(*decomposed_logicals(dem_instr))
+        return xor_lists(*decomposed_observables(dem_instr))
     else:
         return tuple(
             sorted(
@@ -82,8 +82,8 @@ def decomposed_detectors(dem_instr: stim.DemInstruction) -> list[tuple[int, ...]
     return list_dets
 
 
-def decomposed_logicals(dem_instr: stim.DemInstruction) -> list[tuple[int, ...]]:
-    """Returns a list of the logical indices triggered for each fault that the DEM
+def decomposed_observables(dem_instr: stim.DemInstruction) -> list[tuple[int, ...]]:
+    """Returns a list of the logical observable indices triggered for each fault that the DEM
     instruction is decomposed into.
     """
     if not isinstance(dem_instr, stim.DemInstruction):
@@ -93,20 +93,20 @@ def decomposed_logicals(dem_instr: stim.DemInstruction) -> list[tuple[int, ...]]
     if dem_instr.type != "error":
         raise ValueError(f"'dem_instr' is not an error, it is {dem_instr.type}.")
 
-    list_logs = []
+    list_obs = []
     current = []
     for e in dem_instr.targets_copy():
         if e.is_separator():
-            list_logs.append(current)
+            list_obs.append(current)
             current = []
         if e.is_logical_observable_id():
             current.append(e.val)
-    list_logs.append(current)
+    list_obs.append(current)
 
     # process dets
-    list_logs = [tuple(sorted(l)) for l in list_logs]
+    list_obs = [tuple(sorted(l)) for l in list_obs]
 
-    return list_logs
+    return list_obs
 
 
 def remove_detectors(
@@ -159,13 +159,13 @@ def sorted_dem_instr(dem_instr: stim.DemInstruction) -> stim.DemInstruction:
         return dem_instr
 
     dets = sorted(get_detectors(dem_instr))
-    logs = sorted(get_logicals(dem_instr))
+    obs = sorted(get_observables(dem_instr))
     dets_target = list(map(stim.target_relative_detector_id, dets))
-    logs_target = list(map(stim.target_logical_observable_id, logs))
+    obs_target = list(map(stim.target_logical_observable_id, obs))
     prob = dem_instr.args_copy()
 
     return stim.DemInstruction(
-        type="error", targets=dets_target + logs_target, args=prob
+        type="error", targets=dets_target + obs_target, args=prob
     )
 
 

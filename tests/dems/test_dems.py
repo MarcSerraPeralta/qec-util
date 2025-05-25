@@ -8,7 +8,7 @@ from qec_util.dems import (
     get_max_weight_hyperedge,
     disjoint_graphs,
     get_flippable_detectors,
-    get_flippable_logicals,
+    get_flippable_observables,
     contains_only_edges,
     convert_observables_to_detectors,
     get_errors_triggering_detectors,
@@ -220,7 +220,7 @@ def test_get_flippable_detectors():
     return
 
 
-def test_get_flippable_logicals():
+def test_get_flippable_observables():
     dem = stim.DetectorErrorModel(
         """
         error(0.1) D4 D6
@@ -232,11 +232,11 @@ def test_get_flippable_logicals():
         """
     )
 
-    logs = get_flippable_logicals(dem)
+    obs = get_flippable_observables(dem)
 
-    expected_logs = set([2, 3])
+    expected_obs = set([2, 3])
 
-    assert logs == expected_logs
+    assert obs == expected_obs
 
     return
 

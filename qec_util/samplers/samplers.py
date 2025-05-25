@@ -41,7 +41,7 @@ def sample_failures(
     ----------
     dem
         Detector error model from which to sample the detectors and
-        logical flips.
+        logical observable flips.
     decoder
         Decoder object with a ``decode_batch`` method.
     min_failures

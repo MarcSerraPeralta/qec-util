@@ -53,23 +53,23 @@ def get_circuit_distance(circuit: stim.Circuit) -> int:
     return d_circ
 
 
-def get_circuit_distance_logical(
-    dem: stim.DetectorErrorModel, logical_id: int
+def get_circuit_distance_observable(
+    dem: stim.DetectorErrorModel, obs_ind: int
 ) -> tuple[int, stim.DetectorErrorModel]:
     """Returns the minimum number of faults to flip the specified logical
-    without triggering any detectors given the detector error model.
+    observable without triggering any detectors given the detector error model.
 
     Parameters
     ----------
     dem
         Detector error model.
-    logical_id
+    obs_ind
         Index of the logical observable in the ``dem``.
 
     Returns
     -------
     d_circ
-        Circuit distance of the ``logical``.
+        Circuit distance of the ``obs_ind``.
     errors
         Set of faults that makes the circuit distance be ``d_circ``.
     """
@@ -81,7 +81,7 @@ def get_circuit_distance_logical(
     dem = only_errors(dem)
     obs_det_ind = dem.num_detectors
     new_dem = convert_observables_to_detectors(
-        dem, obs_inds=[logical_id], det_inds=[obs_det_ind]
+        dem, obs_inds=[obs_ind], det_inds=[obs_det_ind]
     )
     det_support = get_errors_triggering_detectors(new_dem)
 

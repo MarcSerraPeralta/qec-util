@@ -2,7 +2,7 @@ import stim
 
 from qec_util.dem_instrs import (
     get_detectors,
-    get_logicals,
+    get_observables,
     has_separator,
     sorted_dem_instr,
     remove_detectors,
@@ -31,7 +31,7 @@ def test_get_detectors():
     return
 
 
-def test_get_logicals():
+def test_get_observables():
     dem = stim.DetectorErrorModel(
         """
         error(0.1) D0 L0 ^ D1 L1 ^ D0 L1
@@ -39,15 +39,15 @@ def test_get_logicals():
         """
     )
 
-    logicals = get_logicals(dem[0])
+    obs = get_observables(dem[0])
 
-    expected_logicals = (0,)
-    assert logicals == expected_logicals
+    expected_obs = (0,)
+    assert obs == expected_obs
 
-    logicals = get_logicals(dem[1])
+    obs = get_observables(dem[1])
 
-    expected_logicals = (1, 2)
-    assert logicals == expected_logicals
+    expected_obs = (1, 2)
+    assert obs == expected_obs
 
     return
 
