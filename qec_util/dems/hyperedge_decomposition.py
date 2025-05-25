@@ -23,7 +23,7 @@ def decompose_hyperedges_to_edges(
         and boundary edges of ``dem``.
     ignore_decomposition_failures
         If ``True``, does not raises an error if any hyperedge decomposition does not
-        match the logical effect of the hyperedge.
+        match the logical observable effect of the hyperedge.
         By default ``False``.
 
     Returns

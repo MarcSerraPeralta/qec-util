@@ -2,7 +2,7 @@ import numpy as np
 import stim
 from pymatching import Matching
 
-from .dem_instrs import get_detectors, get_logicals
+from .dem_instrs import get_detectors, get_observables
 
 
 def decompose_hyperedge_to_edges(
@@ -21,7 +21,7 @@ def decompose_hyperedge_to_edges(
         Edge errors to use for the decomposition of the hyperedges.
     ignore_decomposition_failures
         If ``True``, does not raises an error if any hyperedge decomposition does not
-        match the logical effect of the hyperedge.
+        match the logical observable effect of the hyperedge.
         By default ``False``.
 
     Notes
@@ -72,12 +72,13 @@ def decompose_hyperedge_to_edges(
         decomposition.append(edge_to_instr[edge])
 
     if not ignore_decomposition_failure:
-        log = set()
+        obs = set()
         for error in decomposition:
-            log.symmetric_difference_update(get_logicals(error))
-        if log != set(get_logicals(hyperedge)):
+            obs.symmetric_difference_update(get_observables(error))
+        if obs != set(get_observables(hyperedge)):
             raise ValueError(
-                f"Decomposition with logical effect found for {hyperedge}:\n{decomposition}"
+                f"Decomposition with different logical observable effect found for {hyperedge}:"
+                f"\n{decomposition}"
             )
 
     # build decomposed hyperedge

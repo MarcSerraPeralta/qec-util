@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import stim
 import networkx as nx
 
-from ..dem_instrs import get_detectors, get_logicals, sorted_dem_instr
+from ..dem_instrs import get_detectors, get_observables, sorted_dem_instr
 
 
 def remove_gauge_detectors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
@@ -210,7 +210,7 @@ def get_flippable_detectors(dem: stim.DetectorErrorModel) -> set[int]:
     return dets
 
 
-def get_flippable_logicals(dem: stim.DetectorErrorModel) -> set[int]:
+def get_flippable_observables(dem: stim.DetectorErrorModel) -> set[int]:
     """Returns a the logical observable indices present in the given DEM
     that are triggered by some errors.
     """
@@ -219,12 +219,12 @@ def get_flippable_logicals(dem: stim.DetectorErrorModel) -> set[int]:
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
 
-    logs = set()
+    obs = set()
     for dem_instr in dem.flattened():
         if dem_instr.type == "error":
-            logs.update(get_logicals(dem_instr))
+            obs.update(get_observables(dem_instr))
 
-    return logs
+    return obs
 
 
 def contains_only_edges(dem: stim.DetectorErrorModel) -> bool:
@@ -280,16 +280,18 @@ def convert_observables_to_detectors(
     for instr in dem.flattened():
         if instr.type == "error":
             detectors = list(get_detectors(instr))
-            logicals = list(get_logicals(instr))
+            observables = list(get_observables(instr))
 
             for obs_ind, det_ind in zip(obs_inds, det_inds):
-                if obs_ind in logicals:
+                if obs_ind in observables:
                     detectors.append(det_ind)
-                    logicals.remove(obs_ind)
+                    observables.remove(obs_ind)
 
             new_detectors = [stim.target_relative_detector_id(d) for d in detectors]
-            new_logicals = [stim.target_logical_observable_id(l) for l in logicals]
-            targets = new_detectors + new_logicals
+            new_observables = [
+                stim.target_logical_observable_id(l) for l in observables
+            ]
+            targets = new_detectors + new_observables
 
             new_instr = stim.DemInstruction(
                 type="error",
