@@ -1,11 +1,6 @@
 from itertools import product
 import numpy as np
 import stim
-from pysat.examples.rc2 import RC2
-from pysat.formula import WCNF
-import gurobipy as gp
-from gurobipy import GRB
-from dem_decoders import BP_OSD
 
 from ..dems import (
     convert_observables_to_detectors,
@@ -34,11 +29,19 @@ def get_circuit_distance(circuit: stim.Circuit) -> int:
     -------
     d_circ
         Circuit distance of the given circuit.
+
+    Notes
+    -----
+    This function requires ``pysat``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     if not isinstance(circuit, stim.Circuit):
         raise ValueError(
             "'circuit' must be a 'stim.Circuit', " f"but {type(circuit)} was given."
         )
+
+    from pysat.examples.rc2 import RC2
+    from pysat.formula import WCNF
 
     # remove gauge detectors from experiment (if not, it doesn't work)
     circuit = remove_gauge_detectors(circuit)
@@ -72,11 +75,20 @@ def get_circuit_distance_observable(
         Circuit distance of the ``obs_ind``.
     errors
         Set of faults that makes the circuit distance be ``d_circ``.
+
+    Notes
+    -----
+    This function requires ``gurobipy``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
+
+    import gurobipy as gp
+    from gurobipy import GRB
+
     dem = dem.flattened()
     dem = only_errors(dem)
     obs_det_ind = dem.num_detectors
@@ -135,7 +147,7 @@ def get_circuit_distance_observable(
 
 
 def get_upper_bound_circuit_distance(
-    dem: stim.DetectorErrorModel, decoder: type[Decoder] = BP_OSD, **kargs
+    dem: stim.DetectorErrorModel, decoder: type[Decoder] | None = None, **kargs
 ) -> tuple[int, stim.DetectorErrorModel]:
     """Returns an upper bound for the circuit distance.
 
@@ -147,6 +159,7 @@ def get_upper_bound_circuit_distance(
         Decoder used to obtain the upper bound. The inputs for the initialization
         must be ``dem`` and ``**kargs``. It must have the ``decode_to_faults_array``
         which must return an array of the predicted faults/errors for the given syndrome.
+        By default ``None``, which loads BPOSD.
     **kargs
         Extra arguments for the initialization of the decoder with ``dem``.
 
@@ -156,8 +169,15 @@ def get_upper_bound_circuit_distance(
         Upper bound for the circuit distance.
     error
         Error corresponding to the upper bound.
+
+    Notes
+    -----
+    This function requires ``dem_decoders`` if ``decoder = None``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
-    if kargs == {} and decoder == BP_OSD:
+    if kargs == {} and (decoder is None):
+        from dem_decoders import BP_OSD as decoder
+
         # default arguments for BP_OSD
         kargs = {
             "max_iter": 50,

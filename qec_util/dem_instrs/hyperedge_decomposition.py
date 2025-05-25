@@ -1,6 +1,5 @@
 import numpy as np
 import stim
-from pymatching import Matching
 
 from .dem_instrs import get_detectors, get_observables
 
@@ -26,6 +25,9 @@ def decompose_hyperedge_to_edges(
 
     Notes
     -----
+    This function requires ``pymatching``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
+
     If the hyperedge contains a decomposition with ``stim.target_separator``s,
     it is going to be overwritten.
     """
@@ -53,6 +55,8 @@ def decompose_hyperedge_to_edges(
         raise ValueError(
             f"'dem_edges' do not span the whole detectors required for 'hyperedge'."
         )
+    
+    from pymatching import Matching
 
     mwpm = Matching(dem_edges)
     syndrome = np.zeros(dem_edges.num_detectors, dtype=bool)

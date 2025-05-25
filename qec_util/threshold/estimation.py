@@ -2,8 +2,6 @@ from collections.abc import Iterable, Callable
 
 import pathlib
 import numpy as np
-import scipy.stats as stats
-from scipy.optimize import curve_fit
 
 from .util import get_fit_func, rescale_input, save_fit_information
 
@@ -108,6 +106,11 @@ def get_threshold(
     value of the Bernouilli distribution, and its variance is
     ``alpha/(alpha + beta) * beta/(alpha + beta) * 1/(alpha + beta)``,
     which mimics the variance when performing ``alpha + beta`` Bernouilli trials.
+
+    Notes
+    -----
+    This function requires ``scipy``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
     if not isinstance(data, dict):
         raise TypeError(f"'data' must be a dict, but {type(data)} was given.")
@@ -139,6 +142,8 @@ def get_threshold(
             "'params_guess' does not have the same length as expected for "
             f"{fit_func_name} (i.e. {num_params + 2})."
         )
+
+    import scipy.stats as stats
 
     # convert data into single numpy array so that the all the data is fitted
     # in the same fit. They can not be stored in a matrix because different
@@ -228,7 +233,13 @@ def _least_square_fit(
 
     The optional parameters follow the same nomenclature as the optional
     parameters for ``scipy.optimize.curve_fit``.
+
+    Notes
+    -----
+    This function requires ``scipy``. To install the requirements to be able
+    to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
+    from scipy.optimize import curve_fit
 
     def rescaled_func(x, *args):
         ps, ds = x[0], x[1]
