@@ -55,7 +55,7 @@ def decompose_hyperedge_to_edges(
         raise ValueError(
             f"'dem_edges' do not span the whole detectors required for 'hyperedge'."
         )
-    
+
     from pymatching import Matching
 
     mwpm = Matching(dem_edges)
