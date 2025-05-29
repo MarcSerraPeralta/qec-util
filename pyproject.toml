@@ -29,4 +29,4 @@ namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [project.optional-dependencies]
 dev = ["qec_util[all]", "pip-tools", "pytest", "scalene", "black", "pytest-black"]
-all = ["networkx", "python-sat", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib"]
+all = ["networkx", "python-sat", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib", "galois"]
