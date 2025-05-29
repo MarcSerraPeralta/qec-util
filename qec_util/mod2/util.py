@@ -6,19 +6,19 @@ def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.n
     Performs Gauss elimination to the given GF2 matrix by adding and permutting rows.
     It does not add or permute columns. The structure of the reduced matrix is:
 
-    100**00***            100**00**0
-    010**00***            010**00**0
-    001**00***     or     001**00**0
-    0000010***            0000010**0
+    100**0****            100**0***0
+    010**0****            010**0***0
+    001**0****     or     001**0***0
+    000001****            000001***0
     000000000*            0000000001
     000000000*            0000000000
 
-    if depending on ``skip_last_column``.
+    depending on ``skip_last_column``.
 
     Parameters
     ----------
     a
-        Binary matrix to be brought to the specified form. Its shape must be ``(N, M)``,
+        Binary matrix to be brought to the described form. Its shape must be ``(N, M)``,
         thus ``a`` can be a square or non-square matrix.
     skip_last_column
         If ``True``, does not process the last column of the matrix ``a``.
@@ -28,7 +28,7 @@ def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.n
     -------
     a
         Reduced matrix using Gauss elimination by rows. If parameter ``a`` is a
-        ``galois.Array``, then the returned ``a`` is also a ``galois.Array``.
+        ``galois.Array``, the returned ``a`` is also a ``galois.Array``.
     """
     if not isinstance(a, np.ndarray):
         raise TypeError(f"'a' must be a numpy array, but {type(a)} was given.")
@@ -96,14 +96,14 @@ def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     if len(a.shape) != 2:
         raise TypeError(f"'a' must be a matrix, but a.shape={a.shape} was given.")
     if len(b.shape) != 1:
-        raise TypeError(f"'b' must be a matrix, but b.shape={b.shape} was given.")
+        raise TypeError(f"'b' must be a vector, but b.shape={b.shape} was given.")
     if a.shape[0] != b.shape[0]:
         raise TypeError("'a' and 'b' must have the same number of rows.")
 
     import galois
 
     a_aug = galois.GF2(np.concatenate([a, b.reshape(-1, 1)], axis=1))
-    a_red = gauss_elimination_rows(a_aug)
+    a_red = gauss_elimination_rows(a_aug, skip_last_column=True)
 
     # Identify pivots and check for inconsistency
     n, m = a.shape
@@ -128,7 +128,7 @@ def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 def decompose_into_basis(vector: np.ndarray, basis: np.ndarray):
     """
-    Decomposes the given vector into the specified basis, so that
+    Decomposes the given vector in terms of the specified basis vectors, so that
     ``basis @ decomposition = vector``.
 
     Parameters
