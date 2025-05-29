@@ -1,3 +1,5 @@
+from typing import overload
+
 import numpy as np
 
 
@@ -32,6 +34,11 @@ def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.n
     """
     if not isinstance(a, np.ndarray):
         raise TypeError(f"'a' must be a numpy array, but {type(a)} was given.")
+    if not (
+        (a.dtype == bool)
+        or (np.issubdtype(a.dtype, np.integer) and a.min() >= 0 and a.max() <= 1)
+    ):
+        raise TypeError(f"'a' must be a binary matrix.")
     if len(a.shape) != 2:
         raise TypeError(f"'a' must be a matrix, but a.shape={a.shape} was given.")
 
@@ -53,7 +60,7 @@ def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.n
         # eliminate entries except pivot
         for row in range(n):
             if a[row, col] and (row != pivot_row):
-                a[row] ^= a[pivot_row]
+                a[row] ^= a[pivot_row]  # operator "^" also works for ints 0 and 1
 
         pivot_row += 1
         if pivot_row == n:
@@ -99,10 +106,18 @@ def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         raise TypeError(f"'b' must be a vector, but b.shape={b.shape} was given.")
     if a.shape[0] != b.shape[0]:
         raise TypeError("'a' and 'b' must have the same number of rows.")
+    if a.dtype == bool:
+        a = a.astype(int)
+    if not np.issubdtype(a.dtype, np.integer):
+        raise TypeError(f"'a' must be a GF2 matrix, but dtype={a.dtype} was given.")
+    if b.dtype == bool:
+        b = a.astype(int)
+    if not np.issubdtype(b.dtype, np.integer):
+        raise TypeError(f"'b' must be a GF2 matrix, but dtype={b.dtype} was given.")
 
     import galois
 
-    a_aug = galois.GF2(np.concatenate([a, b.reshape(-1, 1)], axis=1))
+    a_aug = galois.GF2(np.concatenate([a, b.reshape(-1, 1)], axis=1, dtype=int))
     a_red = gauss_elimination_rows(a_aug, skip_last_column=True)
 
     # Identify pivots and check for inconsistency
@@ -126,7 +141,20 @@ def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return x
 
 
-def decompose_into_basis(vector: np.ndarray, basis: np.ndarray):
+@overload
+def decompose_into_basis(vector: np.ndarray, basis: np.ndarray) -> np.ndarray: ...
+@overload
+def decompose_into_basis(
+    vector: list[str | int], basis: list[list[str | int]]
+) -> list[int]: ...
+@overload
+def decompose_into_basis(
+    vector: list[str | int], basis: dict[str | int, list[str | int]]
+) -> list[str | int]: ...
+def decompose_into_basis(
+    vector: np.ndarray | list[str | int],
+    basis: np.ndarray | list[list[str | int]] | dict[str | int, list[str | int]],
+) -> np.ndarray | list[int] | list[str | int]:
     """
     Decomposes the given vector in terms of the specified basis vectors, so that
     ``basis @ decomposition = vector``.
@@ -134,13 +162,19 @@ def decompose_into_basis(vector: np.ndarray, basis: np.ndarray):
     Parameters
     ----------
     vector
-        Vector to decompose.
+        Vector to decompose. It can be given as a numpy vector or as a list of labels
+        whose vector entry is 1. It must match with ``basis``.
     basis
-        Matrix with columns as basis vectors.
+        Matrix with columns as basis vectors. It can be given as a numpy matrix, as a list
+        of labels whose vector entry is 1. It must match with ``vector``.
+        The list can also be given as a dictonary.
 
     Returns
     -------
     The decomposition of the vector in terms of the basis vectors.
+    If ``basis`` is a numpy matrix, the output is a numpy vector.
+    If ``basis`` is a list, the output is a list of basis-vector indices.
+    If ``basis`` is a dict, the output is a list of basis-vector labels.
 
     Raises
     ------
@@ -152,4 +186,50 @@ def decompose_into_basis(vector: np.ndarray, basis: np.ndarray):
     This function requires ``galois``. To install the requirements to be able
     to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     """
-    return solve_linear_system(a=basis, b=vector)
+    if isinstance(vector, list) and isinstance(basis, list):
+        labels = set(vector)
+        for basis_vec in basis:
+            labels |= set(basis_vec)
+        label_to_ind = {l: i for i, l in enumerate(labels)}
+
+        vector_np = np.zeros(len(labels), dtype=int)
+        for label in vector:
+            vector_np[label_to_ind[label]] = 1
+
+        basis_np = np.zeros((len(basis), len(labels)), dtype=int)
+        for k, basis_vec in enumerate(basis):
+            for label in basis_vec:
+                basis_np[k, label_to_ind[label]] = 1
+        basis_np = basis_np.T  # basis vectors as columns
+
+        decom_np = solve_linear_system(a=basis_np, b=vector_np)
+        return [i for i, v in enumerate(decom_np) if v != 0]
+
+    elif isinstance(vector, list) and isinstance(basis, dict):
+        labels = set(vector)
+        for basis_vec in basis.values():
+            labels |= set(basis_vec)
+        label_to_ind = {l: i for i, l in enumerate(labels)}
+
+        vector_np = np.zeros(len(labels), dtype=int)
+        for label in vector:
+            vector_np[label_to_ind[label]] = 1
+
+        basis_np = np.zeros((len(basis), len(labels)), dtype=int)
+        ind_to_basis_label = {i: b for i, b in enumerate(basis)}
+        for k, _ in enumerate(basis):
+            for label in basis[ind_to_basis_label[k]]:
+                basis_np[k, label_to_ind[label]] = 1
+        basis_np = basis_np.T  # basis vectors as columns
+
+        decom_np = solve_linear_system(a=basis_np, b=vector_np)
+        return [ind_to_basis_label[i] for i, v in enumerate(decom_np) if v != 0]
+
+    elif isinstance(vector, np.ndarray) and isinstance(basis, np.ndarray):
+        return solve_linear_system(a=basis, b=vector)
+
+    else:
+        raise TypeError(
+            "'vector' and 'basis' do not have the correct types. "
+            "{type(vector)} and {type(basis)} were given."
+        )
