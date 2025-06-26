@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from itertools import product
 import numpy as np
 import stim
@@ -7,7 +8,6 @@ from ..dems import (
     only_errors,
     get_errors_triggering_detectors,
 )
-from ..circuits import remove_gauge_detectors
 
 
 class Decoder:
@@ -15,10 +15,8 @@ class Decoder:
     def decode_to_faults_array(self, syndrome: np.ndarray) -> np.ndarray: ...
 
 
-def get_circuit_distance(circuit: stim.Circuit) -> int:
+def get_circuit_distance(circuit: stim.Circuit) -> tuple[int, stim.DetectorErrorModel]:
     """Returns the circuit distance of the given circuit.
-
-    Note that the SAT solver can take some time.
 
     Parameters
     ----------
@@ -29,35 +27,28 @@ def get_circuit_distance(circuit: stim.Circuit) -> int:
     -------
     d_circ
         Circuit distance of the given circuit.
+    errors
+        Set of faults that makes the circuit distance be ``d_circ``.
 
     Notes
     -----
-    This function requires ``pysat``. To install the requirements to be able
+    This function requires ``gurobipy``. To install the requirements to be able
     to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
+    See ``README.md`` for how to set up the Gurobi license.
     """
     if not isinstance(circuit, stim.Circuit):
         raise ValueError(
             "'circuit' must be a 'stim.Circuit', " f"but {type(circuit)} was given."
         )
 
-    from pysat.examples.rc2 import RC2
-    from pysat.formula import WCNF
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+    obs_inds = list(range(dem.num_observables))
 
-    # remove gauge detectors from experiment (if not, it doesn't work)
-    circuit = remove_gauge_detectors(circuit)
-
-    # solve SAT problem
-    wcnf_string = circuit.shortest_error_sat_problem()
-    wcnf = WCNF(from_string=wcnf_string)
-    with RC2(wcnf) as rc2:
-        rc2.compute()
-        d_circ = rc2.cost
-
-    return d_circ
+    return get_circuit_distance_observable(dem, obs_inds=obs_inds)
 
 
 def get_circuit_distance_observable(
-    dem: stim.DetectorErrorModel, obs_ind: int
+    dem: stim.DetectorErrorModel, obs_inds: int | Sequence[int]
 ) -> tuple[int, stim.DetectorErrorModel]:
     """Returns the minimum number of faults to flip the specified logical
     observable without triggering any detectors given the detector error model.
@@ -66,8 +57,8 @@ def get_circuit_distance_observable(
     ----------
     dem
         Detector error model.
-    obs_ind
-        Index of the logical observable in the ``dem``.
+    obs_inds
+        Index(s) of the logical observable in the ``dem``.
 
     Returns
     -------
@@ -80,10 +71,17 @@ def get_circuit_distance_observable(
     -----
     This function requires ``gurobipy``. To install the requirements to be able
     to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
+    See ``README.md`` for how to set up the Gurobi license.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise TypeError(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if isinstance(obs_inds, int):
+        obs_inds = [obs_inds]
+    if not isinstance(obs_inds, Sequence):
+        raise TypeError(
+            f"'obs_inds' must be an int or a list[int], but {type(obs_inds)} was given."
         )
 
     import gurobipy as gp
@@ -91,9 +89,9 @@ def get_circuit_distance_observable(
 
     dem = dem.flattened()
     dem = only_errors(dem)
-    obs_det_ind = dem.num_detectors
+    obs_det_inds = [dem.num_detectors + i for i, _ in enumerate(obs_inds)]
     new_dem = convert_observables_to_detectors(
-        dem, obs_inds=[obs_ind], det_inds=[obs_det_ind]
+        dem, obs_inds=obs_inds, det_inds=obs_det_inds
     )
     det_support = get_errors_triggering_detectors(new_dem)
 
@@ -112,7 +110,7 @@ def get_circuit_distance_observable(
     for det_id, support in det_support.items():
         if len(support) == 0:
             continue
-        defect = 1 if det_id == obs_det_ind else 0
+        defect = 1 if det_id in obs_det_inds else 0
         support = np.array(support)
 
         model.addConstr(
@@ -121,9 +119,7 @@ def get_circuit_distance_observable(
         )
 
     # define cost function to maximize
-    obj_fn = 0
-    for k in range(new_dem.num_errors):
-        obj_fn += errors[k]
+    obj_fn = np.ones(new_dem.num_errors).T @ errors
     model.setObjective(obj_fn, GRB.MINIMIZE)
 
     # update model to build the contraints and cost function
