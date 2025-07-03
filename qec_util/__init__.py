@@ -1,4 +1,13 @@
-from . import performance, data_processing, distance, dems, circuits, dem_instrs
+from . import (
+    performance,
+    data_processing,
+    distance,
+    dems,
+    circuits,
+    dem_instrs,
+    threshold,
+    mod2,
+)
 
 __version__ = "0.4.0"
 __all__ = [
@@ -8,4 +17,6 @@ __all__ = [
     "dems",
     "circuits",
     "dem_instrs",
+    "threshold",
+    "mod2",
 ]
