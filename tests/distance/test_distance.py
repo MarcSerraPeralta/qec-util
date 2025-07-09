@@ -15,8 +15,9 @@ def test_get_circuit_distance():
         rounds=3,
         after_clifford_depolarization=0.01,
     )
+    dem = circuit.detector_error_model()
 
-    d_circ, error = get_circuit_distance(circuit)
+    d_circ, error = get_circuit_distance(dem)
 
     assert d_circ == 3
     assert isinstance(error, stim.DetectorErrorModel)

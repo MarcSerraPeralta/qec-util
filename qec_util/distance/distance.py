@@ -15,13 +15,16 @@ class Decoder:
     def decode_to_faults_array(self, syndrome: np.ndarray) -> np.ndarray: ...
 
 
-def get_circuit_distance(circuit: stim.Circuit) -> tuple[int, stim.DetectorErrorModel]:
+def get_circuit_distance(
+    dem: stim.DetectorErrorModel,
+) -> tuple[int, stim.DetectorErrorModel]:
     """Returns the circuit distance of the given circuit.
 
     Parameters
     ----------
-    circuit
-        Stim circuit.
+    dem
+        Detector error model. This function works better if 'dem' does not
+        contain gauge detectors.
 
     Returns
     -------
@@ -36,14 +39,12 @@ def get_circuit_distance(circuit: stim.Circuit) -> tuple[int, stim.DetectorError
     to execute any function in ``qec_util``, run ``pip install qec_util[all]``.
     See ``README.md`` for how to set up the Gurobi license.
     """
-    if not isinstance(circuit, stim.Circuit):
+    if not isinstance(dem, stim.DetectorErrorModel):
         raise ValueError(
-            "'circuit' must be a 'stim.Circuit', " f"but {type(circuit)} was given."
+            "'dem' must be a 'stim.DetectorErrorModel', " f"but {type(dem)} was given."
         )
 
-    dem = circuit.detector_error_model(allow_gauge_detectors=True)
     obs_inds = list(range(dem.num_observables))
-
     return get_circuit_distance_observable(dem, obs_inds=obs_inds)
 
 
