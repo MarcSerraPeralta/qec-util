@@ -3,6 +3,9 @@ from collections.abc import Sequence
 import stim
 
 
+SQ_MEASUREMENTS = ["M", "MX", "MY", "MZ"]
+
+
 def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
     """Removes the gauge detectors from the given circuit."""
     if not isinstance(circuit, stim.Circuit):
@@ -123,3 +126,73 @@ def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
         new_circuit.append(new_ob)
 
     return new_circuit
+
+
+def format_rec_targets(
+    circuit: stim.Circuit, qubit_inds: None | dict[str, int] = None
+) -> str:
+    """
+    Returns the sintrg of a circuit where the ``rec[-i]``s in the detectors and observables
+    have been replaced/formatted to ``qubit_label[-t]`` with  ``t`` corresponding to the relative
+    number of measurements for the specific qubits (not for all qubits stim does with ``i``).
+
+    Parameters
+    ----------
+    circuit
+        Stim circuit.
+    qubit_inds
+        Mapping of the qubit labels to their corresponding qubit index in ``circuit``.
+
+    Returns
+    -------
+    circuit_str
+        Formatted stim circuit string.
+
+    Notes
+    -----
+    It only supports circuits with single-qubit-measurement instructions, that is without
+    parity-measurement instructions such as ``MZZ`` or ``MPP``.
+    """
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
+    if qubit_inds is None:
+        qubit_inds = {f"q{i}": i for i in range(circuit.num_qubits)}
+    if not isinstance(qubit_inds, dict):
+        raise TypeError(
+            f"'qubit_inds' must be a dict, but {type(qubit_inds)} was given."
+        )
+    if any(not isinstance(ind, int) for ind in qubit_inds.values()):
+        raise TypeError("The values of 'qubit_inds' must be integers.")
+    ind_to_label = {v: k for k, v in qubit_inds.items()}
+
+    circuit_str = ""
+    measurements: list[tuple[str, int]] = []
+    num_qubit_meas = {q: 0 for q in qubit_inds}
+    for instr in circuit.flattened():
+        if instr.name in SQ_MEASUREMENTS:
+            qubit_labels = [ind_to_label[i.value] for i in instr.targets_copy()]
+            for qubit_label in qubit_labels:
+                measurements.append((qubit_label, num_qubit_meas[qubit_label]))
+                num_qubit_meas[qubit_label] += 1
+        if instr.name not in ["DETECTOR", "OBSERVABLE_INCLUDE"]:
+            circuit_str += str(instr) + "\n"
+            continue
+
+        targets = [i.value for i in instr.targets_copy()]
+
+        targets_str: list[str] = []
+        for target in targets:
+            meas = measurements[target]
+            qubit_label, abs_ind = meas
+            rel_ind = abs_ind - num_qubit_meas[qubit_label]
+            targets_str.append(f"{qubit_label}[{rel_ind}]")
+
+        # get prefix
+        instr_str = str(instr)
+        prefix = instr_str.split("rec[")[0]
+
+        circuit_str += prefix + " ".join(targets_str) + "\n"
+
+    return circuit_str
