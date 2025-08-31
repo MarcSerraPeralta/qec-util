@@ -4,6 +4,7 @@ from .circuits import (
     observables_to_detectors,
     move_observables_to_end,
     format_rec_targets,
+    format_to_rec_targets,
 )
 
 
@@ -13,4 +14,5 @@ __all__ = [
     "observables_to_detectors",
     "move_observables_to_end",
     "format_rec_targets",
+    "format_to_rec_targets",
 ]
