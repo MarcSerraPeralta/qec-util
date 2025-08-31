@@ -132,7 +132,7 @@ def format_rec_targets(
     circuit: stim.Circuit, qubit_inds: None | dict[str, int] = None
 ) -> str:
     """
-    Returns the sintrg of a circuit where the ``rec[-i]``s in the detectors and observables
+    Returns the string of a circuit where the ``rec[-i]``s in the detectors and observables
     have been replaced/formatted to ``qubit_label[-t]`` with  ``t`` corresponding to the relative
     number of measurements for the specific qubits (not for all qubits stim does with ``i``).
 
@@ -152,6 +152,8 @@ def format_rec_targets(
     -----
     It only supports circuits with single-qubit-measurement instructions, that is without
     parity-measurement instructions such as ``MZZ`` or ``MPP``.
+
+    See ``format_to_rec_targets`` for the inverse functionality.
     """
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(
@@ -165,6 +167,8 @@ def format_rec_targets(
         )
     if any(not isinstance(ind, int) for ind in qubit_inds.values()):
         raise TypeError("The values of 'qubit_inds' must be integers.")
+    if any(not isinstance(q, str) for q in qubit_inds.keys()):
+        raise TypeError("The keys of 'qubit_inds' must be strings.")
     ind_to_label = {v: k for k, v in qubit_inds.items()}
 
     circuit_str = ""
@@ -196,3 +200,83 @@ def format_rec_targets(
         circuit_str += prefix + " ".join(targets_str) + "\n"
 
     return circuit_str
+
+
+def format_to_rec_targets(circuit_str: str, qubit_inds: dict[str, int]) -> stim.Circuit:
+    """
+    Returns the stim circuit from the string where the detectors and observables are
+    specified with ``qubit_label[-t]``. This corresponds to the inverse of ``format_rec_targets``.
+
+    Parameters
+    ----------
+    circuit_str
+        String corresponding to a Stim circuit, except for the detectors and observables.
+    qubit_inds
+        Mapping of the qubit labels to their corresponding qubit index in ``circuit_str``.
+
+    Returns
+    -------
+    circuit
+        Corresponding Stim circuit.
+
+    Notes
+    -----
+    It only supports circuits with single-qubit-measurement instructions, that is without
+    parity-measurement instructions such as ``MZZ`` or ``MPP``.
+    """
+    if not isinstance(circuit_str, str):
+        raise TypeError(
+            f"'circuit_str' must be a str, but {type(circuit_str)} was given."
+        )
+    if not isinstance(qubit_inds, dict):
+        raise TypeError(
+            f"'qubit_inds' must be a dict, but {type(qubit_inds)} was given."
+        )
+    if any(not isinstance(ind, int) for ind in qubit_inds.values()):
+        raise TypeError("The values of 'qubit_inds' must be integers.")
+    if any(not isinstance(q, str) for q in qubit_inds.keys()):
+        raise TypeError("The keys of 'qubit_inds' must be strings.")
+    if any(" " in q for q in qubit_inds.keys()):
+        raise TypeError("The keys of 'qubit_inds' cannot contain spaces.")
+    ind_to_label = {v: k for k, v in qubit_inds.items()}
+
+    # remove spaces at the beginning and at the end of each instruction
+    instructions = [
+        line.strip() for line in circuit_str.split("\n") if line.strip() != ""
+    ]
+
+    new_circuit_str = ""
+    num_meas = 0
+    meas_order: dict[str, list[int]] = {q: [] for q in qubit_inds}
+    for instr in instructions:
+        if not (("DETECTOR" in instr) or ("OBSERVABLE_INCLUDE" in instr)):
+            new_circuit_str += instr + "\n"
+
+            stim_instr = stim.Circuit(instr)[0]
+            if stim_instr.name in SQ_MEASUREMENTS:
+                for target in stim_instr.targets_copy():
+                    label = ind_to_label[target.value]
+                    meas_order[label].append(num_meas)
+                    num_meas += 1
+
+            continue
+
+        # detectors can have or not have the parenthesis after 'DETECTOR'.
+        if ")" in instr:
+            index = instr.index(")") + 2
+        else:
+            index = instr.index(" ") + 1
+
+        prefix = instr[:index]
+        targets = instr[index:].split(" ")
+
+        new_targets: list[str] = []
+        for target in targets:
+            label, s2 = target.split("[")
+            rel_meas_id = int(s2[:-1])  # because of the trailing ']'.
+            abs_meas_id = meas_order[label][rel_meas_id]
+            new_targets.append(f"rec[{abs_meas_id - num_meas}]")
+
+        new_circuit_str += prefix + " ".join(new_targets) + "\n"
+
+    return stim.Circuit(new_circuit_str)
