@@ -112,6 +112,7 @@ def get_defect_probs(anc_probs: DataArray, ideal_defects: DataArray) -> DataArra
     defect_probs = xr.where(ideal_defects, 1 - defect_probs, defect_probs)
     # reshape into the original dimensions' order because ideal_defects does
     # not have e.g. "shot" dimension and messes the order of the dimensions
+    dims_order = (dim for dim in dims_order if dim != "state")
     defect_probs = defect_probs.transpose(*dims_order)
 
     return defect_probs
