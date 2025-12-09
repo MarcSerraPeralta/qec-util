@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+requires-python = ">=3.10"
+name = "qec-util"
+description = "Useful tools for QEC simulation" 
+version = "0.4.1"
+authors = [
+    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" },
+    { name = "Boris Varbanov", email = "b.m.varbanov@gmail.com"},
+]
+maintainers = [
+    { name = "Marc Serra Peralta", email = "marcserraperalta@gmail.com" },
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+dependencies = [
+    "numpy",
+    "stim",
+    "lmfit",
+    "xarray",
+]
+
+[tool.setuptools.packages.find]
+include = ["qec_util", "qec_util.*"]  # package names should match these glob patterns (["*"] by default)
+namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+
+[project.optional-dependencies]
+dev = ["qec_util[all]", "pip-tools", "pytest", "scalene", "black", "pytest-black"]
+all = ["networkx", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib", "galois"]
