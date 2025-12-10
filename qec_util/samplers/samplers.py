@@ -241,7 +241,7 @@ def sample_failures(
     ):
         print_v(f"Sampling {batch_size} shots...")
         defects, log_flips, _ = sampler.sample(shots=batch_size)
-        print_v("Decoding {batch_size} shots...")
+        print_v(f"Decoding {batch_size} shots...")
         predictions = decoder.decode_batch(defects)
         log_errors = predictions != log_flips
         print_v("Computing decoding failures...")
