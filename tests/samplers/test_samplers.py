@@ -8,6 +8,7 @@ from qec_util.samplers import (
     sample_failures,
     read_failures_from_file,
     merge_batches_in_file,
+    merge_files,
 )
 
 
@@ -49,7 +50,7 @@ def test_sampler_extra_metrics(tmp_path):
     )
     dem = circuit.detector_error_model()
     mwpm = Matching(dem)
-    extra_metrics = lambda x: [np.zeros(len(x))]
+    extra_metrics = lambda x: [np.zeros(len(x), dtype=int)]
 
     num_failures, num_samples, extra = sample_failures(
         dem,
@@ -202,7 +203,7 @@ def test_merge_batches_in_file(tmp_path):
     )
     dem = circuit.detector_error_model()
     mwpm = Matching(dem)
-    extra_metrics = lambda x: [np.zeros(len(x))]
+    extra_metrics = lambda x: [np.zeros(len(x), dtype=int)]
 
     num_failures, num_samples, extra = sample_failures(
         dem,
@@ -228,5 +229,40 @@ def test_merge_batches_in_file(tmp_path):
     assert num_failures == read_failures
     assert num_samples == read_samples
     assert extra == read_extra
+
+    return
+
+
+def test_merge_files(tmp_path):
+    with open(tmp_path / "tmp_file_1.txt", "w") as file:
+        file.write("1 10 | 2 4\n")
+    with open(tmp_path / "tmp_file_2.txt", "w") as file:
+        file.write("5 20 | 1 0\n")
+
+    merge_files(
+        [tmp_path / "tmp_file_1.txt", tmp_path / "tmp_file_2.txt"],
+        tmp_path / "merged_file.txt",
+    )
+
+    num_failures, num_samples, extra = read_failures_from_file(
+        tmp_path / "merged_file.txt"
+    )
+    assert num_failures == 6
+    assert num_samples == 30
+    assert extra[0] == 3
+    assert extra[1] == 4
+    assert len(extra) == 2
+
+    assert (tmp_path / "tmp_file_1.txt").exists()
+    assert (tmp_path / "tmp_file_2.txt").exists()
+
+    merge_files(
+        [tmp_path / "tmp_file_1.txt", tmp_path / "tmp_file_2.txt"],
+        tmp_path / "merged_file.txt",
+        delete_files=True,
+    )
+
+    assert not (tmp_path / "tmp_file_1.txt").exists()
+    assert not (tmp_path / "tmp_file_2.txt").exists()
 
     return

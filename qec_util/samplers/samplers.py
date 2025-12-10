@@ -1,5 +1,7 @@
 from collections.abc import Callable
 import time
+from datetime import datetime
+import os
 import pathlib
 
 import numpy as np
@@ -29,6 +31,7 @@ def sample_failures(
     file_name: str | pathlib.Path | None = None,
     decoding_failure: Callable = lambda x: x.any(axis=1),
     extra_metrics: Callable = lambda _: list(),
+    verbose: bool = True,
 ) -> tuple[int, int, list[int]]:
     """Samples decoding failures until all the minimum requirements have been
     fulfilled (i.e. min. number of failures, min. runtime, min. number of samples)
@@ -86,6 +89,8 @@ def sample_failures(
         from the failures. Its input is an ``np.ndarray`` of shape
         ``(num_samples, num_observables)`` and its output must be a boolean
         ``np.ndarray`` of shape ``(num_samples,)``.
+    verbose
+        Flag to print information during sampling. By default, ``False``.
 
     Returns
     -------
@@ -120,37 +125,81 @@ def sample_failures(
             "One of 'max_samples', 'max_time', or 'max_failures' must be non infinite."
         )
 
+    def print_v(string: str):
+        if verbose:
+            print(datetime.now(), string)
+        return
+
     num_failures, num_samples = 0, 0
 
     if (file_name is not None) and pathlib.Path(file_name).exists():
+        print_v("File already exists, reading file...")
         num_failures, num_samples, extra = read_failures_from_file(file_name)
         # check if desired samples/failures have been reached
         if (num_samples >= max_samples) or (num_failures >= max_failures):
+            print_v("File has enough samples and failures.")
             return num_failures, num_samples, extra
 
-    # check that everyting works correct and estimate the batch size for decoding,
-    # if needed
+    # check that everyting works correctly and estimate the batch size for decoding, if needed.
+    # if no batch size is provided, use something very small to avoid problems if
+    # the decoder is very slow.
+    _num_shots = 1 if batch_size is None else int(batch_size)
+    print_v("Compile sampler from DEM...")
     sampler = dem.compile_sampler()
-    defects, log_flips, _ = sampler.sample(shots=100)
+    print_v(f"Sampling {_num_shots} shots...")
+    defects, log_flips, _ = sampler.sample(shots=_num_shots)
     t_init = time.time()
+    print_v(f"Decoding {_num_shots} shots...")
     predictions = decoder.decode_batch(defects)
-    run_time = (time.time() - t_init) / 100
+    run_time = (time.time() - t_init) / _num_shots
     log_errors = predictions != log_flips
-    failures = decoding_failure(log_errors)
-    extra = extra_metrics(log_errors)
-    if (not isinstance(failures, np.ndarray)) or (failures.shape != (100,)):
+    print_v("Computing decoding failures...")
+    _failures = decoding_failure(log_errors)
+    _num_failures = _failures.sum()
+    print_v(f"There were {_num_failures} failures in {_num_shots} shots.")
+    print_v("Evaluating extra metrics...")
+    _extra = extra_metrics(log_errors)
+    if (not isinstance(_failures, np.ndarray)) or (_failures.shape != (_num_shots,)):
         raise ValueError(
             "'decoding_function' does not return a correctly shaped output."
         )
     if (
-        (not isinstance(extra, list))
-        or any(not isinstance(m, np.ndarray) for m in extra)
-        or any(m.shape != (100,) for m in extra)
+        (not isinstance(_extra, list))
+        or any(not isinstance(m, np.ndarray) for m in _extra)
+        or any(m.shape != (_num_shots,) for m in _extra)
     ):
         raise ValueError("'extra_metrics' does not return a correctly shaped output.")
 
+    _sum_extra = [m.sum() for m in _extra]
+    if any(not isinstance(m, int | np.integer) for m in _sum_extra):
+        raise ValueError("'extra_metrics' does not return a correct (integer) type.")
+
+    # store computed data if it corresponds to batch_size
+    if _num_shots == batch_size:
+        if file_name is not None:
+            print_v("Opening file to store data...")
+            file = open(file_name, "a")
+            if FILE_LOCKING:
+                fcntl.lockf(file, fcntl.LOCK_EX)
+
+            extra_str = ""
+            if len(_extra) != 0:
+                extra_str = " | " + " ".join([f"{m}" for m in _sum_extra])
+
+            print_v("Writing data to file...")
+            file.write(f"{_num_failures} {_num_shots}{extra_str}\n")
+            file.close()
+            # read again num_samples and num_failures to avoid oversampling
+            # when multiple processes are writing in the same file.
+            print_v("Update data in case multiple processes are running...")
+            _num_failures, _num_samples, _extra = read_failures_from_file(file_name)
+            if (_num_samples >= max_samples) or (_num_failures >= max_failures):
+                print_v("File has enough samples and failures.")
+                return _num_failures, _num_samples, _extra
+
+    # estimate batch size
     if batch_size is None:
-        log_err_prob = np.average(failures)
+        log_err_prob = np.average(_failures)
         estimated_max_samples = min(
             [
                 max_samples - num_samples,
@@ -174,9 +223,10 @@ def sample_failures(
 
     # ensure batch size is int
     batch_size = int(batch_size)
+    print_v(f"Selected batch size of {batch_size}.")
 
     # initialize the correct size of extra metrics
-    extra = [0 for _ in extra]
+    extra = [0 for _ in _extra]
 
     # start sampling...
     while (
@@ -189,10 +239,15 @@ def sample_failures(
             and num_samples < max_samples
         )
     ):
+        print_v(f"Sampling {batch_size} shots...")
         defects, log_flips, _ = sampler.sample(shots=batch_size)
+        print_v("Decoding {batch_size} shots...")
         predictions = decoder.decode_batch(defects)
         log_errors = predictions != log_flips
+        print_v("Computing decoding failures...")
         batch_failures = decoding_failure(log_errors).sum()
+        print_v(f"There were {batch_failures} failures in {batch_size} shots.")
+        print_v("Evaluating extra metrics...")
         batch_extra = [int(m.sum()) for m in extra_metrics(log_errors)]
 
         num_failures += batch_failures
@@ -200,6 +255,7 @@ def sample_failures(
         extra = [m + bm for m, bm in zip(extra, batch_extra)]
 
         if file_name is not None:
+            print_v("Opening file to store data...")
             file = open(file_name, "a")
             if FILE_LOCKING:
                 fcntl.lockf(file, fcntl.LOCK_EX)
@@ -208,12 +264,15 @@ def sample_failures(
             if len(extra) != 0:
                 extra_str = " | " + " ".join([f"{m}" for m in batch_extra])
 
+            print_v("Writing data to file...")
             file.write(f"{batch_failures} {batch_size}{extra_str}\n")
             file.close()
             # read again num_samples and num_failures to avoid oversampling
             # when multiple processes are writing in the same file.
+            print_v("Update data in case multiple processes are running...")
             num_failures, num_samples, extra = read_failures_from_file(file_name)
 
+    print_v("Sampling conditions are reached, finished sampling.")
     return int(num_failures), num_samples, extra
 
 
@@ -249,8 +308,9 @@ def read_failures_from_file(
     Notes
     -----
     The structure of ``file_name`` file is: each batch is stored in the file in a
-    different line using the format ``num_failures num_samples\n``.
-    The file ends with an empty line.
+    different line using the format ``num_failures num_samples\n`` if no extra metrics
+    are provided, and ``num_failures num_samples | extra_metric_1 extra_metric_2 ...``
+    otherwise. The file ends with an empty line.
     """
     if not pathlib.Path(file_name).exists():
         raise FileExistsError(f"The given file ({file_name}) does not exist.")
@@ -292,8 +352,9 @@ def merge_batches_in_file(file_name: str | pathlib.Path) -> None:
     ----------
     file_name
         Name of the file with the data.
-        The structure of the file is specified in the Notes and the intended
-        usage is for the ``sample_failures`` function.
+        The structure of the file is specified in the Notes from
+        ``read_failures_from_file`` function and the intended usage is for the
+        ``sample_failures`` function.
     """
     num_failures, num_samples, extra_metrics = read_failures_from_file(
         file_name=file_name
@@ -305,5 +366,43 @@ def merge_batches_in_file(file_name: str | pathlib.Path) -> None:
             extra_str = " | " + " ".join([f"{m}" for m in extra_metrics])
 
         file.write(f"{num_failures} {num_samples}{extra_str}\n")
+
+    return
+
+
+def merge_files(
+    file_names: list[str | pathlib.Path],
+    merged_file_name: str | pathlib.Path,
+    delete_files: bool = False,
+) -> None:
+    """Merges the batches in the given files into a single file.
+    Batches in each file are aggregated into a single line in the new file.
+
+    Parameters
+    ----------
+    file_names
+        Name of the files with the data.
+        The structure of the file is specified in the Notes from
+        ``read_failures_from_file`` function and the intended usage is for the
+        ``sample_failures`` function.
+    merged_file_name
+        Name of the file to merge the files into.
+    delete_files
+        Flag to delete the files after being merged. By default ``False``.
+    """
+    for file_name in file_names:
+        num_failures, num_samples, extra_metrics = read_failures_from_file(
+            file_name=file_name
+        )
+
+        with open(merged_file_name, "a") as file:
+            extra_str = ""
+            if len(extra_metrics) != 0:
+                extra_str = " | " + " ".join([f"{m}" for m in extra_metrics])
+
+            file.write(f"{num_failures} {num_samples}{extra_str}\n")
+
+        if delete_files:
+            os.remove(file_name)
 
     return
