@@ -23,6 +23,12 @@ def test_logical_error_prob():
     log_err_prob = metrics.logical_error_prob(predictions, true_values)
     assert log_err_prob == 0.25
 
+    predictions = np.array([[0, 1, 0, 1], [0, 1, 1, 1]])
+    true_values = np.array([[0, 0, 0, 1], [0, 1, 1, 1]])
+
+    log_err_prob = metrics.logical_error_prob(predictions, true_values)
+    assert log_err_prob == 0.5
+
     return
 
 

@@ -2,12 +2,13 @@ from copy import deepcopy
 
 import xarray as xr
 import numpy as np
+import numpy.typing as npt
 
 
 def get_pij_matrix(
-    defects: xr.DataArray | np.ndarray,
+    defects: xr.DataArray | npt.NDArray[np.integer],
     avoid_nans: bool = True,
-) -> np.ndarray:
+) -> npt.NDArray[np.floating]:
     """
     Returns the Pij matrix.
 
@@ -67,7 +68,7 @@ def get_pij_matrix(
 
 def plot_pij_matrix(
     ax,
-    pij: np.ndarray,
+    pij: npt.NDArray[np.floating],
     qubit_labels: list[str] | None = None,
     num_rounds: int | None = None,
     max_prob: float | int = 0.05,

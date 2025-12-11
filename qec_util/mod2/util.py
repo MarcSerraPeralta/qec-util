@@ -1,9 +1,12 @@
 from typing import overload
 
 import numpy as np
+import numpy.typing as npt
 
 
-def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.ndarray:
+def gauss_elimination_rows(
+    a: npt.NDArray[np.integer], skip_last_column: bool = True
+) -> npt.NDArray[np.integer]:
     """
     Performs Gauss elimination to the given GF2 matrix by adding and permutting rows.
     It does not add or permute columns. The structure of the reduced matrix is:
@@ -69,7 +72,9 @@ def gauss_elimination_rows(a: np.ndarray, skip_last_column: bool = True) -> np.n
     return a
 
 
-def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def solve_linear_system(
+    a: npt.NDArray[np.integer], b: npt.NDArray[np.integer]
+) -> npt.NDArray[np.integer]:
     """
     Returns a solution for ``a @ x = b`` using operations in GF2.
 
@@ -142,7 +147,9 @@ def solve_linear_system(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 @overload
-def decompose_into_basis(vector: np.ndarray, basis: np.ndarray) -> np.ndarray: ...
+def decompose_into_basis(
+    vector: npt.NDArray[np.integer], basis: npt.NDArray[np.integer]
+) -> npt.NDArray[np.integer]: ...
 @overload
 def decompose_into_basis(
     vector: list[str | int], basis: list[list[str | int]]
@@ -152,9 +159,13 @@ def decompose_into_basis(
     vector: list[str | int], basis: dict[str | int, list[str | int]]
 ) -> list[str | int]: ...
 def decompose_into_basis(
-    vector: np.ndarray | list[str | int],
-    basis: np.ndarray | list[list[str | int]] | dict[str | int, list[str | int]],
-) -> np.ndarray | list[int] | list[str | int]:
+    vector: npt.NDArray[np.integer] | list[str | int],
+    basis: (
+        npt.NDArray[np.integer]
+        | list[list[str | int]]
+        | dict[str | int, list[str | int]]
+    ),
+) -> npt.NDArray[np.integer] | list[int] | list[str | int]:
     """
     Decomposes the given vector in terms of the specified basis vectors, so that
     ``basis @ decomposition = vector``.

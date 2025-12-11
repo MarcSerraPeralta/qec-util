@@ -1,13 +1,14 @@
 import numpy as np
+import numpy.typing as npt
 
 
 def plot_line_threshold(
     ax,
-    phys_prob: np.ndarray,
-    log_prob: np.ndarray,
-    log_prob_lower: np.ndarray | None = None,
-    log_prob_upper: np.ndarray | None = None,
-    **kargs,
+    phys_prob: npt.NDArray[np.floating],
+    log_prob: npt.NDArray[np.floating],
+    log_prob_lower: npt.NDArray[np.floating] | None = None,
+    log_prob_upper: npt.NDArray[np.floating] | None = None,
+    **kargs: object,
 ):
     """Plots the logical error probability as a function of the physiscal
     error probability, including its upper and lower error bars (if given).

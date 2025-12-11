@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from itertools import product
 import numpy as np
+import numpy.typing as npt
 import stim
 
 from ..dems import (
@@ -11,8 +12,10 @@ from ..dems import (
 
 
 class Decoder:
-    def __init__(self, dem: stim.DetectorErrorModel, **kargs) -> None: ...
-    def decode_to_faults_array(self, syndrome: np.ndarray) -> np.ndarray: ...
+    def __init__(self, dem: stim.DetectorErrorModel, **kargs: object) -> None: ...
+    def decode_to_faults_array(
+        self, syndrome: npt.NDArray[np.integer]
+    ) -> npt.NDArray[np.integer]: ...
 
 
 def get_circuit_distance(
@@ -144,7 +147,7 @@ def get_circuit_distance_observable(
 
 
 def get_upper_bound_circuit_distance(
-    dem: stim.DetectorErrorModel, decoder: type[Decoder] | None = None, **kargs
+    dem: stim.DetectorErrorModel, decoder: type[Decoder] | None = None, **kargs: object
 ) -> tuple[int, stim.DetectorErrorModel]:
     """Returns an upper bound for the circuit distance.
 
@@ -191,7 +194,8 @@ def get_upper_bound_circuit_distance(
     new_dem = convert_observables_to_detectors(dem)
     decoder_dem = decoder(new_dem, **kargs)
 
-    num_faults = np.inf
+    num_faults: int = np.inf
+    error = stim.DetectorErrorModel()
     for comb in product([False, True], repeat=num_obs):
         if not any(comb):
             # skip [0,0,0...] case
@@ -209,5 +213,7 @@ def get_upper_bound_circuit_distance(
         for fault_ind in fault_inds:
             error += dem[fault_ind : fault_ind + 1]  # object is a DetectorErrorModel
         num_faults = len(error)
+
+    num_faults = num_faults if num_faults != np.inf else -1
 
     return num_faults, error

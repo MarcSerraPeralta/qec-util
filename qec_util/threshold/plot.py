@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
 import numpy as np
+import numpy.typing as npt
 
 from .util import get_fit_func, rescale_input
 
@@ -8,14 +9,14 @@ from .util import get_fit_func, rescale_input
 def plot_threshold_fit(
     ax,
     fit_func_name: str,
-    popt: np.ndarray,
+    popt: npt.NDArray[np.floating],
     rescaled_phys_err_min: float | int = -3,
     rescaled_phys_err_max: float | int = +2,
     color: str | None = "black",
     linestyle: str | None = "-",
     label: str | None = "fit",
     legend_loc: str | None = "upper left",
-    **kargs,
+    **kargs: object,
 ):
     """
     Plots the fitted function from ``qec_util.threshold.get_threshold`` fit
@@ -85,14 +86,19 @@ def plot_threshold_fit(
 
 def plot_threshold_data(
     ax,
-    data: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]],
-    popt: np.ndarray,
+    data: dict[
+        int,
+        tuple[
+            npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]
+        ],
+    ],
+    popt: npt.NDArray[np.floating],
     colors: dict[int, str | None] | None = None,
     markers: dict[int, str | None] | None = None,
     labels: dict[int, str | None] | None = None,
     linestyles: dict[int, str | None] | None = None,
     legend_loc: str | None = "upper left",
-    **kargs,
+    **kargs: object,
 ):
     """
     Plots the data as a function of the rescaled physical error probability.
