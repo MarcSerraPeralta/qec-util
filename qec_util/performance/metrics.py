@@ -1,31 +1,40 @@
 import lmfit
 
 import numpy as np
+import numpy.typing as npt
 from uncertainties import ufloat, Variable
 
 
-def logical_error_prob(predictions: np.ndarray, true_values: np.ndarray) -> np.float64:
-    """Returns the logical error probability.
+def logical_error_prob(
+    predictions: npt.NDArray[np.integer], true_values: npt.NDArray[np.integer]
+) -> np.floating:
+    """Returns the logical error probability, with logical error defined as
+    when any prediction does not match the true value.
 
     Parameters
     ----------
     predictions
         Predictions made by the decoder.
+        Must have shape ``(num_shots, num_observables)`` or
+        ``(num_shots,)`` if there is only one observable.
     true_values
         True values.
+        Must have shape ``(num_shots, num_observables)`` or
+        ``(num_shots,)`` if there is only one observable.
 
     Returns
     -------
     float
-        Logical error probability, defined as
-        ``# correct predictions / # total samples``.
+        Logical error probability.
     """
-    return np.mean(predictions ^ true_values)
+    if len(predictions.shape) == len(true_values.shape) == 1:
+        return np.mean(predictions ^ true_values)
+    return np.mean((predictions ^ true_values).any(axis=1))
 
 
 def logical_error_prob_decay(
-    rounds: np.ndarray, error_rate: float, round_offset: int | float = 0
-) -> np.ndarray:
+    rounds: npt.NDArray[np.integer], error_rate: float, round_offset: int | float = 0
+) -> npt.NDArray[np.floating]:
     """Returns the theoretical logical error probability given the QEC round
     and the logical error rate per QEC cycle.
 
@@ -70,7 +79,7 @@ class LogicalErrorProbDecayModel(lmfit.model.Model):
         return
 
     def guess(
-        self, data: np.ndarray, x: np.ndarray, **kws
+        self, data: npt.NDArray[np.floating], x: npt.NDArray[np.integer], **kws: object
     ) -> lmfit.parameter.Parameters:
         # to ensure they are np.ndarrays
         x, data = np.array(x), np.array(data)
@@ -88,11 +97,11 @@ class LogicalErrorProbDecayModel(lmfit.model.Model):
 
     def fit(
         self,
-        data: np.ndarray,
-        rounds: np.ndarray,
+        data: npt.NDArray[np.floating],
+        rounds: npt.NDArray[np.integer],
         min_round_fit: int | float = 0,
-        *args,
-        **kargs,
+        *args: object,
+        **kargs: object,
     ) -> lmfit.model.ModelResult:
         """
         Fits the data to the model.
@@ -140,8 +149,8 @@ def lmfit_par_to_ufloat(param: lmfit.parameter.Parameter) -> Variable:
 
 
 def get_error_rate(
-    rounds: np.ndarray,
-    log_error_probs: np.ndarray,
+    rounds: npt.NDArray[np.integer],
+    log_error_probs: npt.NDArray[np.floating],
     min_round_fit: int | float = 0,
     return_round_offset: bool = False,
 ) -> Variable | tuple[Variable, Variable]:
@@ -182,11 +191,11 @@ def get_error_rate(
 
 
 def confidence_interval_binomial(
-    num_failures: int | np.ndarray,
-    num_samples: int | np.ndarray,
+    num_failures: int | npt.NDArray[np.integer],
+    num_samples: int | npt.NDArray[np.integer],
     probit: float = 1.96,
-    method="wilson",
-) -> tuple[float | np.ndarray, float | np.ndarray]:
+    method: str = "wilson",
+) -> tuple[float | npt.NDArray[np.floating], float | npt.NDArray[np.floating]]:
     """Returns the lower and upper bounds for the logical error probability
     given the number of decoding failures and samples.
 

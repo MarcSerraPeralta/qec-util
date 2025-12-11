@@ -2,16 +2,22 @@ from collections.abc import Iterable, Callable
 
 import pathlib
 import numpy as np
+import numpy.typing as npt
 
 from .util import get_fit_func, rescale_input, save_fit_information
 
 
 def get_threshold(
-    data: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]],
+    data: dict[
+        int,
+        tuple[
+            npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]
+        ],
+    ],
     fit_func_name: str = "poly-2",
     num_samples_bootstrap: int = 1000,
     conf_level: float = 0.975,
-    params_guess: np.ndarray | None = None,
+    params_guess: npt.NDArray[np.floating] | None = None,
     weighted: bool = True,
     file_name: str | pathlib.Path | None = None,
 ) -> tuple[float, float, float]:
@@ -217,16 +223,16 @@ def get_threshold(
 
 
 def _least_square_fit(
-    func: Callable,
-    phys_err: np.ndarray,
-    distances: np.ndarray,
-    log_err: np.ndarray,
-    sigma: np.ndarray | None = None,
-    p0: np.ndarray | None = None,
+    func: Callable[..., float],
+    phys_err: npt.NDArray[np.floating],
+    distances: npt.NDArray[np.integer],
+    log_err: npt.NDArray[np.floating],
+    sigma: npt.NDArray[np.floating] | None = None,
+    p0: npt.NDArray[np.floating] | None = None,
     maxfev: int = 1_000_000,
     absolute_sigma: bool = True,
-    **kargs,
-) -> tuple[np.ndarray, np.ndarray]:
+    **kargs: object,
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
     """
     Returns the estimated threshold from the fit to the given
     function once rescaled.

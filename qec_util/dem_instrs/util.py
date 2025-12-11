@@ -1,14 +1,17 @@
 from collections.abc import Iterable
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
-def xor_two_lists(list1: Iterable, list2: Iterable) -> tuple:
+def xor_two_lists(list1: Iterable[T], list2: Iterable[T]) -> tuple[T, ...]:
     """Returns the symmetric difference of two lists.
     Note that the resulting list has been sorted.
     """
     return tuple(sorted(set(list1).symmetric_difference(list2)))
 
 
-def xor_lists(*elements: Iterable) -> tuple:
+def xor_lists(*elements: Iterable[T]) -> tuple[T]:
     """Returns the symmetric difference of multiple lists.
     Note that the resulting list has been sorted.
     """

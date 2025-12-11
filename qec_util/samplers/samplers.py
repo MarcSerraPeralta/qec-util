@@ -5,6 +5,7 @@ import os
 import pathlib
 
 import numpy as np
+import numpy.typing as npt
 import stim
 
 # the package "fcntl" is only available for Unix systems.
@@ -29,8 +30,10 @@ def sample_failures(
     batch_size: int | np.float64 | float | None = None,
     max_batch_size: int | float = np.inf,
     file_name: str | pathlib.Path | None = None,
-    decoding_failure: Callable = lambda x: x.any(axis=1),
-    extra_metrics: Callable = lambda _: list(),
+    decoding_failure: Callable[
+        [npt.NDArray[np.bool]], npt.NDArray[np.bool]
+    ] = lambda x: x.any(axis=1),
+    extra_metrics: Callable[..., list[npt.NDArray[np.integer]]] = lambda _: list(),
     verbose: bool = True,
 ) -> tuple[int, int, list[int]]:
     """Samples decoding failures until all the minimum requirements have been

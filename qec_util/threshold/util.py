@@ -2,12 +2,13 @@ from collections.abc import Callable
 
 import pathlib
 import numpy as np
+import numpy.typing as npt
 
 
-def get_fit_func(fit_func: str) -> tuple[Callable, int]:
+def get_fit_func(fit_func: str) -> tuple[Callable[..., float], int]:
     if fit_func == "tanh":
 
-        def tanh(x, a, b, c):
+        def tanh(x, a, b, c) -> float:
             return a * (1 - (1 - 0.5 * (1 + np.tanh(b * x))) ** c)
 
         return tanh, 3
@@ -19,7 +20,7 @@ def get_fit_func(fit_func: str) -> tuple[Callable, int]:
         except ValueError:
             raise ValueError(f"'{fit_func}' is not a valid name for 'poly' fit_func.")
 
-        def poly(x, *args):
+        def poly(x, *args) -> float:
             return sum([args[i] * x**i for i in range(order + 1)])
 
         return poly, order + 1
@@ -29,20 +30,20 @@ def get_fit_func(fit_func: str) -> tuple[Callable, int]:
 
 
 def rescale_input(
-    phys_err: np.ndarray | int | float,
-    distance: np.ndarray | int | float,
-    p_threshold: np.ndarray | float,
-    mu: np.ndarray | int | float,
-) -> np.ndarray:
+    phys_err: npt.NDArray[np.floating] | int | float,
+    distance: npt.NDArray[np.integer] | int,
+    p_threshold: npt.NDArray[np.floating] | float,
+    mu: npt.NDArray[np.floating] | int | float,
+) -> npt.NDArray[np.floating]:
     return (phys_err - p_threshold) * distance ** (1 / mu)
 
 
 def save_fit_information(
     file_name: str | pathlib.Path,
     fit_func_name: str,
-    popt: np.ndarray,
-    pcov: np.ndarray,
-    bootstrap_thresholds: np.ndarray | None = None,
+    popt: npt.NDArray[np.floating],
+    pcov: npt.NDArray[np.floating],
+    bootstrap_thresholds: npt.NDArray[np.floating] | None = None,
 ) -> None:
     """
     Stores the fit information to the given file name for a YAML.
@@ -80,7 +81,12 @@ def save_fit_information(
 
 def load_fit_information(
     file_name: str | pathlib.Path,
-) -> tuple[str, np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[
+    str,
+    npt.NDArray[np.floating],
+    npt.NDArray[np.floating],
+    npt.NDArray[np.floating] | None,
+]:
     """
     Returns 'fit_func_name', 'popt', 'pcov' and 'bootstrap_thresholds'.
     See 'save_fit_information' for more information.
