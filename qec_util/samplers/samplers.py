@@ -393,7 +393,13 @@ def merge_files(
     delete_files
         Flag to delete the files after being merged. By default ``False``.
     """
-    for file_name in file_names:
+    # do not merge the merged_file_name data into merged_file_name
+    # as this would correspond to duplicating the data.
+    if merged_file_name in file_names:
+        file_names = [f for f in file_names if f != merged_file_name]
+
+    # remove duplicate copies as data would be duplicated.
+    for file_name in set(file_names):
         num_failures, num_samples, extra_metrics = read_failures_from_file(
             file_name=file_name
         )

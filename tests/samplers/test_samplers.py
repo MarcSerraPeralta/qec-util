@@ -265,4 +265,21 @@ def test_merge_files(tmp_path):
     assert not (tmp_path / "tmp_file_1.txt").exists()
     assert not (tmp_path / "tmp_file_2.txt").exists()
 
+    with open(tmp_path / "merged_file.txt", "w") as file:
+        file.write("5 20 | 1 0\n")
+
+    merge_files(
+        [tmp_path / "merged_file.txt", tmp_path / "merged_file.txt"],
+        tmp_path / "merged_file.txt",
+    )
+
+    num_failures, num_samples, extra = read_failures_from_file(
+        tmp_path / "merged_file.txt"
+    )
+    assert num_failures == 5
+    assert num_samples == 20
+    assert extra[0] == 1
+    assert extra[1] == 0
+    assert len(extra) == 2
+
     return
