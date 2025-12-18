@@ -7,6 +7,7 @@ from . import (
     dem_instrs,
     threshold,
     mod2,
+    samplers,
 )
 
 __version__ = "0.4.2"
@@ -19,4 +20,5 @@ __all__ = [
     "dem_instrs",
     "threshold",
     "mod2",
+    "samplers",
 ]
