@@ -18,10 +18,10 @@ __all__ = [
     "has_separator",
     "decomposed_detectors",
     "decomposed_observables",
-    "xor_probs",
-    "xor_lists",
     "remove_detectors",
     "sorted_dem_instr",
     "get_labels_from_detectors",
+    "xor_probs",
+    "xor_lists",
     "decompose_hyperedge_to_edges",
 ]
