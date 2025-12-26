@@ -31,7 +31,7 @@ def sample_failures(
     max_batch_size: int | float = np.inf,
     file_name: str | pathlib.Path | None = None,
     decoding_failure: Callable[
-        [npt.NDArray[np.bool]], npt.NDArray[np.bool]
+        [npt.NDArray[bool]], npt.NDArray[bool]
     ] = lambda x: x.any(axis=1),
     extra_metrics: Callable[..., list[npt.NDArray[np.integer]]] = lambda _: list(),
     verbose: bool = True,
