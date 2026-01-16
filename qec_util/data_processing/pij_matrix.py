@@ -68,11 +68,10 @@ def get_pij_matrix(
 
 def get_approx_pij_matrix(
     defects: xr.DataArray | npt.NDArray[np.integer],
-    avoid_nans: bool = True,
 ) -> npt.NDArray[np.floating]:
     """
-    Returns an approximation to the Pij matrix, without the problem
-    of negative numbers inside the sqrt function for the exact Pij matrix.
+    Returns an approximation of the Pij matrix, without having the problem
+    of NaNs from the exact Pij matrix calculation.
 
     For the theory behind this formulat see Eq. 13 from the article
     "Exponential suppression of bit or phase errors with cyclic error correction"
