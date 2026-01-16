@@ -87,8 +87,8 @@ def get_approx_pij_matrix(
 
     Returns
     -------
-    pij
-        Pij matrix, with entries ``pij[i,j] = pij[j,i]`` corresponding to the
+    approx_pij
+        Approximated Pij matrix, with entries ``pij[i,j] = pij[j,i]`` corresponding to the
         :math:`p_{ij}` values. If ``defects`` is a numpy array, the rows and
         columns follow the same defect ordering as ``defects``. If ``defects``
         is a xr.DataArray, the defect ordering follows: [ancilla 1 round 1,
@@ -115,8 +115,8 @@ def get_approx_pij_matrix(
     # get pij using Eq. 13 from SI of https://doi.org/10.1038/s41586-021-03588-y
     numerator = didj - di_matrix * di_matrix.T
     denominator = (1 - 2 * di_matrix) * (1 - 2 * di_matrix.T)
-    pij = numerator / denominator
-    return pij
+    approx_pij = numerator / denominator
+    return approx_pij
 
 
 def plot_pij_matrix(
