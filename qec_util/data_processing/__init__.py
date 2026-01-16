@@ -5,7 +5,7 @@ from .syndrome import (
     get_defect_probs,
     get_final_defect_probs,
 )
-from .pij_matrix import get_pij_matrix, plot_pij_matrix
+from .pij_matrix import get_pij_matrix, get_approx_pij_matrix, plot_pij_matrix
 
 __all__ = [
     "get_defects",
@@ -14,5 +14,6 @@ __all__ = [
     "get_defect_probs",
     "get_final_defect_probs",
     "get_pij_matrix",
+    "get_approx_pij_matrix",
     "plot_pij_matrix",
 ]

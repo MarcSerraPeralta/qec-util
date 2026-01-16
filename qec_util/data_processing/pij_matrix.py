@@ -66,6 +66,59 @@ def get_pij_matrix(
     return pij
 
 
+def get_approx_pij_matrix(
+    defects: xr.DataArray | npt.NDArray[np.integer],
+) -> npt.NDArray[np.floating]:
+    """
+    Returns an approximation of the Pij matrix, without having the problem
+    of NaNs from the exact Pij matrix calculation.
+
+    For the theory behind this formulat see Eq. 13 from the article
+    "Exponential suppression of bit or phase errors with cyclic error correction"
+    by Google Quantum AI, found in the Supplementary information, accessible from
+    https://doi.org/10.1038/s41586-021-03588-y.
+
+    Parameters
+    ----------
+    defects
+        Defect observations. If it is a np.ndarray, it must have shape
+        ``(num_shots, num_defects)``. If it is a xr.DataArray, it must have
+        ``qec_round``, ``anc_qubit``, ``shot`` as coordinates.
+
+    Returns
+    -------
+    approx_pij
+        Approximated Pij matrix, with entries ``pij[i,j] = pij[j,i]`` corresponding to the
+        :math:`p_{ij}` values. If ``defects`` is a numpy array, the rows and
+        columns follow the same defect ordering as ``defects``. If ``defects``
+        is a xr.DataArray, the defect ordering follows: [ancilla 1 round 1,
+        ancilla 1 round 2, ..., ancilla 2 round 1, ancilla 2 round 2, ...],
+        with the ancillas following the same ordering as ``defects.anc_qubit``.
+    """
+    if isinstance(defects, xr.DataArray):
+        # convert to defect vector with ordering: A1 r1, A1 r2, ..., A2 r1, A2 r2, ...
+        defects = defects.transpose("shot", "anc_qubit", "qec_round").values
+        num_shots = defects.shape[0]
+        defects = defects.reshape(num_shots, -1)
+    if not isinstance(defects, np.ndarray):
+        raise TypeError(
+            f"'defects' must be a np.ndarray or xr.DataArray, but {type(defects)} was given."
+        )
+
+    num_shots, _ = defects.shape
+
+    # obtain <didj> and <di>
+    didj = np.einsum("ni, nj -> ij", defects, defects, dtype=np.int32) / num_shots
+    di = np.average(defects, axis=0)
+    di_matrix = np.repeat(di[np.newaxis, :], len(di), axis=0)
+
+    # get pij using Eq. 13 from SI of https://doi.org/10.1038/s41586-021-03588-y
+    numerator = didj - di_matrix * di_matrix.T
+    denominator = (1 - 2 * di_matrix) * (1 - 2 * di_matrix.T)
+    approx_pij = numerator / denominator
+    return approx_pij
+
+
 def plot_pij_matrix(
     ax,
     pij: npt.NDArray[np.floating],
