@@ -28,5 +28,13 @@ include = ["qec_util", "qec_util.*"]  # package names should match these glob pa
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [project.optional-dependencies]
-dev = ["qec_util[all]", "pip-tools", "pytest", "scalene", "black", "pytest-black"]
+dev = ["qec_util[all]", 
+       "pip-tools", 
+       "ruff",
+       "pytest",]
 all = ["networkx", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib", "galois"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E741", "E731", "E501"]
+
