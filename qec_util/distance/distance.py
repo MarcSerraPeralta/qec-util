@@ -44,7 +44,7 @@ def get_circuit_distance(
     """
     if not isinstance(dem, stim.DetectorErrorModel):
         raise ValueError(
-            "'dem' must be a 'stim.DetectorErrorModel', " f"but {type(dem)} was given."
+            f"'dem' must be a 'stim.DetectorErrorModel', but {type(dem)} was given."
         )
 
     obs_inds = list(range(dem.num_observables))

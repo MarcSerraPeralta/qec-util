@@ -64,7 +64,7 @@ def plot_threshold_fit(
     popt = np.array(popt)  # allow for non np.ndarrays
     if len(popt) != num_params + 2:
         raise TypeError(
-            f"'popt' must be of lenght {num_params+2}, but {len(popt)} was given."
+            f"'popt' must be of lenght {num_params + 2}, but {len(popt)} was given."
         )
 
     x = np.linspace(rescaled_phys_err_min, rescaled_phys_err_max, 100)
