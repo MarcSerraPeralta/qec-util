@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 
 from qec_util.threshold import (
-    plot_threshold_fit,
-    plot_threshold_data,
     get_threshold,
     load_fit_information,
+    plot_threshold_data,
+    plot_threshold_fit,
 )
 
 

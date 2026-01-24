@@ -1,16 +1,15 @@
 from .dem_instrs import (
-    get_detectors,
-    get_observables,
-    has_separator,
     decomposed_detectors,
     decomposed_observables,
+    get_detectors,
+    get_labels_from_detectors,
+    get_observables,
+    has_separator,
     remove_detectors,
     sorted_dem_instr,
-    get_labels_from_detectors,
 )
-from .util import xor_probs, xor_lists
 from .hyperedge_decomposition import decompose_hyperedge_to_edges
-
+from .util import xor_lists, xor_probs
 
 __all__ = [
     "get_detectors",

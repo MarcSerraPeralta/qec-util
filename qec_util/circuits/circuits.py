@@ -2,7 +2,6 @@ from collections.abc import Sequence
 
 import stim
 
-
 SQ_MEASUREMENTS = ["M", "MX", "MY", "MZ"]
 
 

@@ -1,8 +1,8 @@
 from copy import deepcopy
 
-import xarray as xr
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
 
 def get_pij_matrix(

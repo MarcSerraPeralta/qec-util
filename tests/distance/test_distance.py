@@ -1,11 +1,11 @@
 import stim
 
+from qec_util.dem_instrs import get_detectors, get_observables
 from qec_util.distance import (
     get_circuit_distance,
     get_circuit_distance_observable,
     get_upper_bound_circuit_distance,
 )
-from qec_util.dem_instrs import get_observables, get_detectors
 
 
 def test_get_circuit_distance():

@@ -1,9 +1,9 @@
-import stim
 import matplotlib.pyplot as plt
+import stim
 
 from qec_util.data_processing import (
-    get_pij_matrix,
     get_approx_pij_matrix,
+    get_pij_matrix,
     plot_pij_matrix,
 )
 

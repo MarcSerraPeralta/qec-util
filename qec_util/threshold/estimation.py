@@ -1,6 +1,6 @@
-from collections.abc import Iterable, Callable
-
 import pathlib
+from collections.abc import Callable, Iterable
+
 import numpy as np
 import numpy.typing as npt
 

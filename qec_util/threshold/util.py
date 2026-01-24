@@ -1,6 +1,6 @@
+import pathlib
 from collections.abc import Callable
 
-import pathlib
 import numpy as np
 import numpy.typing as npt
 

@@ -1,13 +1,14 @@
 from collections.abc import Sequence
 from itertools import product
+
 import numpy as np
 import numpy.typing as npt
 import stim
 
 from ..dems import (
     convert_observables_to_detectors,
-    only_errors,
     get_errors_triggering_detectors,
+    only_errors,
 )
 
 

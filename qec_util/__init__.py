@@ -1,13 +1,13 @@
 from . import (
-    performance,
-    data_processing,
-    distance,
-    dems,
     circuits,
+    data_processing,
     dem_instrs,
-    threshold,
+    dems,
+    distance,
     mod2,
+    performance,
     samplers,
+    threshold,
 )
 
 __version__ = "0.4.2"

@@ -1,8 +1,7 @@
 import lmfit
-
 import numpy as np
 import numpy.typing as npt
-from uncertainties import ufloat, Variable
+from uncertainties import Variable, ufloat
 
 
 def logical_error_prob(
