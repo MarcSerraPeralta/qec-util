@@ -41,7 +41,7 @@ def gauss_elimination_rows(
         (a.dtype == bool)
         or (np.issubdtype(a.dtype, np.integer) and a.min() >= 0 and a.max() <= 1)
     ):
-        raise TypeError(f"'a' must be a binary matrix.")
+        raise TypeError("'a' must be a binary matrix.")
     if len(a.shape) != 2:
         raise TypeError(f"'a' must be a matrix, but a.shape={a.shape} was given.")
 

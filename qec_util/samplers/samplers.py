@@ -1,8 +1,8 @@
-from collections.abc import Callable
-import time
-from datetime import datetime
 import os
 import pathlib
+import time
+from collections.abc import Callable
+from datetime import datetime
 
 import numpy as np
 import numpy.typing as npt
@@ -14,7 +14,7 @@ try:
     import fcntl
 
     FILE_LOCKING = True
-except:
+except ImportError:
     pass
 
 

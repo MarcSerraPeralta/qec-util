@@ -1,7 +1,7 @@
 import stim
 
-from .dems import remove_hyperedges, only_errors
-from ..dem_instrs import get_detectors, decompose_hyperedge_to_edges
+from ..dem_instrs import decompose_hyperedge_to_edges, get_detectors
+from .dems import only_errors, remove_hyperedges
 
 
 def decompose_hyperedges_to_edges(

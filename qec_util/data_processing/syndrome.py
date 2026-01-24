@@ -1,4 +1,5 @@
 from itertools import product
+
 import numpy as np
 import xarray as xr
 from xarray import DataArray
@@ -107,7 +108,7 @@ def get_defect_probs(anc_probs: DataArray, ideal_defects: DataArray) -> DataArra
     dims_order = anc_probs.dims
 
     shifted_probs = anc_probs.shift(qec_round=round_shift)
-    prob_product = anc_probs.dot(shifted_probs, dims="state")
+    prob_product = anc_probs.dot(shifted_probs, dim="state")
     defect_probs = 1 - prob_product.fillna(anc_probs.sel(state=0))
     defect_probs = xr.where(ideal_defects, 1 - defect_probs, defect_probs)
     # reshape into the original dimensions' order because ideal_defects does

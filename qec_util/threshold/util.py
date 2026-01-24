@@ -1,6 +1,6 @@
+import pathlib
 from collections.abc import Callable
 
-import pathlib
 import numpy as np
 import numpy.typing as npt
 
@@ -67,7 +67,7 @@ def save_fit_information(
     data = {
         "fit_func_name": fit_func_name,
         "param_names": ["p_threshold", "mu"]
-        + [f"fit_func_param_{i+1}" for i, _ in enumerate(popt[2:])],
+        + [f"fit_func_param_{i + 1}" for i, _ in enumerate(popt[2:])],
         "popt": popt.tolist(),
         "pcov": pcov.tolist(),
         "bootstrap_thresholds": bootstrap_thresholds.tolist(),

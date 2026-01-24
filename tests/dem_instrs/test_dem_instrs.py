@@ -2,11 +2,11 @@ import stim
 
 from qec_util.dem_instrs import (
     get_detectors,
+    get_labels_from_detectors,
     get_observables,
     has_separator,
-    sorted_dem_instr,
     remove_detectors,
-    get_labels_from_detectors,
+    sorted_dem_instr,
 )
 
 

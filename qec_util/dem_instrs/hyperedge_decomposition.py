@@ -53,7 +53,7 @@ def decompose_hyperedge_to_edges(
     detectors = get_detectors(hyperedge)
     if max(detectors) > dem_edges.num_errors:
         raise ValueError(
-            f"'dem_edges' do not span the whole detectors required for 'hyperedge'."
+            "'dem_edges' do not span the whole detectors required for 'hyperedge'."
         )
 
     from pymatching import Matching

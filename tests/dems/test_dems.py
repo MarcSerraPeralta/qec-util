@@ -2,17 +2,17 @@ import pytest
 import stim
 
 from qec_util.dems import (
-    remove_gauge_detectors,
-    dem_difference,
-    is_instr_in_dem,
-    get_max_weight_hyperedge,
-    disjoint_graphs,
-    get_flippable_detectors,
-    get_flippable_observables,
     contains_only_edges,
     convert_observables_to_detectors,
+    dem_difference,
+    disjoint_graphs,
     get_errors_triggering_detectors,
+    get_flippable_detectors,
+    get_flippable_observables,
+    get_max_weight_hyperedge,
+    is_instr_in_dem,
     only_errors,
+    remove_gauge_detectors,
 )
 
 

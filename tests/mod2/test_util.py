@@ -1,6 +1,6 @@
-import pytest
 import galois
 import numpy as np
+import pytest
 
 from qec_util.mod2 import decompose_into_basis
 

@@ -1,7 +1,6 @@
 import os
 import pathlib
 
-
 DIR_EXCEPTIONS = ["__pycache__"]
 FILE_EXCEPTIONS = [
     "__init__.py",

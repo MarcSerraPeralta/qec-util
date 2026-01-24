@@ -1,4 +1,4 @@
-from qec_util.threshold import get_threshold, load_fit_information, save_fit_information
+from qec_util.threshold import get_threshold, load_fit_information
 
 
 def test_get_threshold():
