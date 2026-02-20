@@ -22,7 +22,9 @@ def failures_file(tmp_path_factory):
     From https://docs.pytest.org/en/stable/how-to/tmp_path.html
     """
     file_name = tmp_path_factory.mktemp("data") / "tmp_failures_file.txt"
-    contents = "10 50\n11 50\n"
+    contents = "num_failures_ps,num_samples_ps,num_samples,seconds\n"
+    contents += "10,50,50,0.003\n"
+    contents += "11,50,50,0.003\n"
     with open(file_name, "w") as file:
         file.write(contents)
     return file_name
