@@ -2,6 +2,7 @@ import pathlib
 import time
 
 import numpy as np
+import pytest
 import stim
 from pymatching import Matching
 
@@ -63,7 +64,7 @@ def test_sampler_extra_metrics(tmp_path: pathlib.Path):
         verbose=False,
         extra_metrics=extra_metrics,
     )
-    print(num_samples)
+
     read_failures, read_samples_ps, read_samples, read_extra = read_failures_from_file(
         tmp_path / "tmp_file_extra_metrics.csv"
     )
@@ -74,6 +75,37 @@ def test_sampler_extra_metrics(tmp_path: pathlib.Path):
     assert extra == read_extra
     assert extra["test"] == 0
     assert extra["seconds"] > 0
+
+    num_failures, num_samples_ps, num_samples, extra = sample_failures(
+        dem,
+        mwpm,
+        max_samples=100_000,
+        file_name=tmp_path / "tmp_file_extra_metrics.csv",
+        verbose=False,
+        extra_metrics_ps=extra_metrics,
+    )
+
+    read_failures, read_samples_ps, read_samples, read_extra = read_failures_from_file(
+        tmp_path / "tmp_file_extra_metrics.csv"
+    )
+
+    assert num_failures == read_failures
+    assert num_samples_ps == read_samples_ps
+    assert num_samples == read_samples
+    assert extra == read_extra
+    assert extra["test"] == 0
+    assert extra["seconds"] > 0
+
+    with pytest.raises(ValueError):
+        _ = sample_failures(
+            dem,
+            mwpm,
+            max_samples=100_000,
+            file_name=tmp_path / "tmp_file_extra_metrics.csv",
+            verbose=False,
+            extra_metrics=extra_metrics,
+            extra_metrics_ps=extra_metrics,
+        )
 
     return
 

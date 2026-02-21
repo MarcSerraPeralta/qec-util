@@ -18,7 +18,7 @@ try:
 except ImportError:
     pass
 
-BinVect = npt.NDArray[np.bool]
+BinVect = npt.NDArray[np.bool_]
 ExtraMetrics = dict[str, BinVect]
 
 HEADER = ["num_failures_ps", "num_samples_ps", "num_samples", "seconds"]
@@ -42,6 +42,7 @@ def sample_failures(
         len(x), dtype=bool
     ),
     extra_metrics: Callable[[BinVect], ExtraMetrics] = lambda _: {},
+    extra_metrics_ps: Callable[[BinVect], ExtraMetrics] = lambda _: {},
     verbose: bool = True,
 ) -> tuple[int, int, int, dict[str, int | float]]:
     """Samples decoding failures until ALL the MINIMUM requirements have been
@@ -110,11 +111,22 @@ def sample_failures(
         By default, all samples are kept (no post-selection).
     extra_metrics
         Function that returns a dictionary of extra metrics to compute appart
-        from the failures (after post-selection). Its input is an ``np.ndarray`` of shape
+        from the failures before post-selection. Its input is an ``np.ndarray`` of shape
+        ``(num_samples, num_observables)`` and its output must be a dictionary
+        mapping strings to boolean ``np.ndarray``s of shape ``(num_samples,)``.
+        By default, the decoding runtime is stored as ``"seconds"`` (which
+        cannot be overwritten).
+        The keys in ``extra_metrics`` must be different than ones in
+        ``extra_metrics_ps``.
+    extra_metrics_ps
+        Function that returns a dictionary of extra metrics to compute appart
+        from the failures after post-selection. Its input is an ``np.ndarray`` of shape
         ``(num_samples_ps, num_observables)`` and its output must be a dictionary
         mapping strings to boolean ``np.ndarray``s of shape ``(num_samples_ps,)``.
         By default, the decoding runtime is stored as ``"seconds"`` (which
         cannot be overwritten).
+        The keys in ``extra_metrics_ps`` must be different than ones in
+        ``extra_metrics``.
     verbose
         Flag to print information during sampling. By default, ``False``.
 
@@ -190,7 +202,13 @@ def sample_failures(
     test_failures = decoding_failure(test)
     test_ps = post_selection(test)
     test_metrics = extra_metrics(test)
-    for var in (test_failures, test_ps, *test_metrics.values()):
+    test_metrics_ps = extra_metrics_ps(test)
+    for var in (
+        test_failures,
+        test_ps,
+        *test_metrics.values(),
+        *test_metrics_ps.values(),
+    ):
         if not isinstance(var, np.ndarray):
             raise TypeError(
                 "Incorrect output type of the decoding failures, metrics, or post-selection: "
@@ -207,9 +225,13 @@ def sample_failures(
                 f"got {var.shape} expected {(batch_size,)}."
             )
 
-    metric_names = list(test_metrics)
+    metric_names = list(test_metrics) + list(test_metrics_ps)
     if "seconds" in metric_names:
         raise ValueError("'seconds' cannot be used a metric name.")
+    if len(set(metric_names)) != len(metric_names):
+        raise ValueError(
+            "'extra_metrics' and 'extra_metrics_ps' must have different keys."
+        )
     extra: dict[str, int | float] = {k: 0 for k in metric_names}
     extra["seconds"] = 0.0
 
@@ -263,6 +285,9 @@ def sample_failures(
         print_v("Evaluating extra metrics...")
         batch_extra: dict[str, int | float] = {
             k: int(m.sum()) for k, m in extra_metrics(log_errors).items()
+        }
+        batch_extra |= {
+            k: int(m.sum()) for k, m in extra_metrics_ps(log_errors_ps).items()
         }
         batch_extra["seconds"] = batch_runtime
         extra = {k: extra[k] + batch_extra[k] for k in ["seconds"] + metric_names}
