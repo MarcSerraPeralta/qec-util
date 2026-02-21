@@ -107,7 +107,7 @@ def test_samples_minimum_requirements():
         max_time=0,
         max_failures=0,
     )
-    assert num_failures >= 2
+    assert num_failures >= 20
 
     return
 
@@ -196,6 +196,16 @@ def test_sampler():
     )
     assert num_failures >= 10
     assert (num_failures >= 0) and (num_samples >= 0) and (num_samples_ps >= 0)
+
+    num_failures, num_samples_ps, num_samples, _ = sample_failures(
+        dem,
+        mwpm,
+        max_samples=2_000,
+        batch_size=1_000,
+        post_selection=lambda x: np.zeros(len(x), dtype=bool),
+    )
+    assert num_samples_ps == 0
+    assert num_samples == 2_000
 
     return
 
