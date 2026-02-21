@@ -98,8 +98,8 @@ def sample_failures(
     decoding_failure
         Function that returns ``True`` if there has been a decoding failure, else
         ``False``. Its input is an ``np.ndarray`` of shape
-        ``(num_samples, num_observables)`` and its output must be a boolean
-        ``np.ndarray`` of shape ``(num_samples,)``.
+        ``(num_samples_ps, num_observables)`` and its output must be a boolean
+        ``np.ndarray`` of shape ``(num_samples_ps,)``.
         By default, a decoding failure corresponds to a logical error happening to
         any of the logical observables.
     post_selection
@@ -121,7 +121,7 @@ def sample_failures(
     Returns
     -------
     num_failures
-        Number of decoding failures.
+        Number of decoding failures after post-selection.
     num_samles_ps
         Number of samples kept after post-selection.
     num_samples
@@ -207,8 +207,7 @@ def sample_failures(
                 f"got {var.shape} expected {(batch_size,)}."
             )
 
-    # sort metrics names to always store them in the same order
-    metric_names = sorted(test_metrics)
+    metric_names = list(test_metrics)
     if "seconds" in metric_names:
         raise ValueError("'seconds' cannot be used a metric name.")
     extra: dict[str, int | float] = {k: 0 for k in metric_names}
@@ -251,14 +250,16 @@ def sample_failures(
         log_errors = predictions != log_flips
         print_v("Post-selecting samples...")
         post_selected = post_selection(log_errors)
-        log_errors = log_errors[post_selected]
+        log_errors_ps = log_errors[post_selected]
         batch_samples_ps = int(post_selected.sum())
         num_samples_ps += batch_samples_ps
         print_v(f"There were {batch_samples_ps} shots kept from {batch_size} shots.")
         print_v("Computing decoding failures...")
-        batch_failures = int(decoding_failure(log_errors).sum())
+        batch_failures = int(decoding_failure(log_errors_ps).sum())
         num_failures += batch_failures
-        print_v(f"There were {batch_failures} failures in {batch_size} shots.")
+        print_v(
+            f"There were {batch_failures} failures in {batch_samples_ps} kept shots."
+        )
         print_v("Evaluating extra metrics...")
         batch_extra: dict[str, int | float] = {
             k: int(m.sum()) for k, m in extra_metrics(log_errors).items()
@@ -288,6 +289,7 @@ def _write_header(file_name: str | pathlib.Path, metric_names: Sequence[str]):
     if FILE_LOCKING:
         fcntl.lockf(file, fcntl.LOCK_EX)
 
+    # sort metrics names to always store them in the same order
     header = ",".join(HEADER + sorted(metric_names)) + "\n"
     _ = file.write(header)
     file.close()
@@ -309,9 +311,9 @@ def _append_data(
     runtime = _extra.pop("seconds")
 
     data = f"{num_failures},{num_samples_ps},{num_samples},{runtime:0.6f}"
-    # extra metrics appear in sorted order
+    # sort metrics names to always store them in the same order
     for m in sorted(_extra):
-        data += f",{extra[m]}"
+        data += f",{_extra[m]}"
     data += "\n"
 
     _ = file.write(data)
@@ -349,8 +351,7 @@ def read_failures_from_file(
     Returns
     -------
     num_failures
-        Total number of failues (after post-selection, if applicable)
-        in the given number of samples.
+        Total number of post-selected failues.
     num_samples_ps
         Number of post-selected samples.
     num_samples
