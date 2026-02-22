@@ -123,7 +123,7 @@ def test_samples_minimum_requirements():
     _, _, num_samples, _ = sample_failures(
         dem,
         mwpm,
-        max_samples=1,
+        max_samples=200,
         min_samples=200,
         max_time=0,
         max_failures=1,
@@ -135,9 +135,9 @@ def test_samples_minimum_requirements():
         dem,
         mwpm,
         min_failures=20,
+        max_failures=20,
         max_samples=1,
         max_time=0,
-        max_failures=0,
     )
     assert num_failures >= 20
 

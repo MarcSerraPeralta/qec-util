@@ -166,6 +166,18 @@ def sample_failures(
         raise TypeError(
             f"'batch_size' must be an int, but {type(batch_size)} was given."
         )
+    if max_failures < min_failures:
+        raise ValueError(
+            "'min_failures' must be smaller (or equal) than 'max_failures'."
+        )
+    if max_time < min_time:
+        raise ValueError("'min_time' must be smaller (or equal) than 'max_time'.")
+    if max_samples < min_samples:
+        raise ValueError("'min_samples' must be smaller (or equal) than 'max_samples'.")
+    if max_samples_ps < min_samples_ps:
+        raise ValueError(
+            "'min_samples_ps' must be smaller (or equal) than 'max_samples_ps'."
+        )
     vars = [min_failures, min_time, min_samples, min_samples_ps]
     vars += [max_failures, max_time, max_samples, max_samples_ps]
     for var in vars:
