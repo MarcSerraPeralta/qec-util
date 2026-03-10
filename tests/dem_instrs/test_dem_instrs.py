@@ -109,6 +109,17 @@ def test_sorted_dem_instr():
         output = sorted_dem_instr(instr)
         assert output == exp_instr
 
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0) D1 L0 L1
+        error(0) D0 D1 L1 L2
+        """
+    )
+
+    for instr, exp_instr in zip(dem, expected_dem):
+        output = sorted_dem_instr(instr, prob=0)
+        assert output == exp_instr
+
     return
 
 

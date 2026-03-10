@@ -147,9 +147,17 @@ def remove_detectors(
     return stim.DemInstruction(type="error", targets=targets, args=prob)
 
 
-def sorted_dem_instr(dem_instr: stim.DemInstruction) -> stim.DemInstruction:
-    """Returns the dem_instr in an specific order.
-    Note that it removes the separators.
+def sorted_dem_instr(
+    dem_instr: stim.DemInstruction, prob: None | float | int = None
+) -> stim.DemInstruction:
+    """Returns the DEM instruction in an specific order. Note that it removes the separators.
+
+    Parameters
+    ----------
+    dem_instr
+        Detector error model (DEM) instruction.
+    prob
+        If specified, it replaces the error probability in ``dem_instr``.
     """
     if not isinstance(dem_instr, stim.DemInstruction):
         raise TypeError(
@@ -157,12 +165,16 @@ def sorted_dem_instr(dem_instr: stim.DemInstruction) -> stim.DemInstruction:
         )
     if dem_instr.type != "error":
         return dem_instr
+    if not (prob is None or isinstance(prob, (int, float))):
+        raise TypeError(
+            "'prob' must be either None, an int or float, but {type(prob)} was given."
+        )
 
     dets = sorted(get_detectors(dem_instr))
     obs = sorted(get_observables(dem_instr))
     dets_target = list(map(stim.target_relative_detector_id, dets))
     obs_target = list(map(stim.target_logical_observable_id, obs))
-    prob = dem_instr.args_copy()
+    prob = dem_instr.args_copy() if prob is None else [prob]
 
     return stim.DemInstruction(
         type="error", targets=dets_target + obs_target, args=prob

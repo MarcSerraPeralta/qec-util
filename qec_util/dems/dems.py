@@ -403,3 +403,28 @@ def remove_hyperedges(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
             new_dem.append(instr)
 
     return new_dem
+
+
+def separate_edges_and_hyperedges(
+    dem: stim.DetectorErrorModel,
+) -> tuple[stim.DetectorErrorModel, stim.DetectorErrorModel]:
+    """Separates the edges and hyperedges in the given DEM."""
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    graph_dem = stim.DetectorErrorModel()
+    hyper_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            graph_dem.append(instr)
+            hyper_dem.append(instr)
+            continue
+
+        if len(get_detectors(instr)) <= 2:
+            graph_dem.append(instr)
+        else:
+            hyper_dem.append(instr)
+
+    return graph_dem, hyper_dem
