@@ -1,7 +1,7 @@
 import pytest
 import stim
 
-from qec_util.dems import decompose_hyperedges_to_edges
+from qec_util.dems import decompose_hyperedges_to_edges, decomposed_dem
 
 
 def test_decompose_hyperedges_to_edges():
@@ -63,5 +63,50 @@ def test_decompose_hyperedges_to_edges_decomposition_failure():
 
     with pytest.raises(ValueError):
         _ = decompose_hyperedges_to_edges(dem, ignore_decomposition_failures=False)
+
+    return
+
+
+def test_decomposed_dem():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 D4 ^ D0 D1 L0
+        error(0.2) D0 D4
+        error(0.2) D0 D1 L0
+        error(0.2) D1 L0
+        error(0.2) D1 D2
+        error(0.2) D3 D4 L0
+        error(0.1) D1 D2 ^ D3 D4 L0
+        detector(0, 2, 1) D0
+        logical_observable L1
+        """
+    )
+
+    decom_dem = decomposed_dem(dem)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.26) D0 D4
+        error(0.26) D0 D1 L0
+        error(0.2) D1 L0
+        error(0.26) D1 D2
+        error(0.26) D3 D4 L0
+        detector(0, 2, 1) D0
+        logical_observable L1
+        """
+    )
+
+    assert decom_dem == expected_dem
+
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 D4 D1 L0
+        error(0.2) D0 D4
+        error(0.2) D0 D1 L0
+        """
+    )
+
+    with pytest.raises(ValueError):
+        _ = decomposed_dem(dem)
 
     return

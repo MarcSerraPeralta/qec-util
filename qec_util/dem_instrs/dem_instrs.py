@@ -110,7 +110,7 @@ def decomposed_observables(dem_instr: stim.DemInstruction) -> list[tuple[int, ..
 
 
 def decomposed_instrs(
-    dem_instr: stim.DemInstruction, prob_method="same"
+    dem_instr: stim.DemInstruction, prob_method: str = "same"
 ) -> stim.DetectorErrorModel:
     """Returns a DEM corresponding to the decomposed error mechanisms of the given instruction.
 

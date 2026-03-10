@@ -1,6 +1,13 @@
 import stim
 
-from ..dem_instrs import decompose_hyperedge_to_edges, get_detectors
+from ..dem_instrs import (
+    decompose_hyperedge_to_edges,
+    decomposed_instrs,
+    get_detectors,
+    has_separator,
+    sorted_dem_instr,
+    xor_probs,
+)
 from .dems import only_errors, remove_hyperedges
 
 
@@ -61,5 +68,71 @@ def decompose_hyperedges_to_edges(
                     ignore_decomposition_failure=ignore_decomposition_failures,
                 )
             )
+
+    return decomposed_dem
+
+
+def decomposed_dem(
+    dem: stim.DetectorErrorModel, prob_method: str = "same"
+) -> stim.DetectorErrorModel:
+    """Returns the decomposed DEM (containing only edges) for the given DEM.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    prob_method
+        Method for assigning probabilities to the decomposed errors.
+        See ``qec_util.dem_instrs.decomposed_instrs`` for more information.
+        By default, the same probability of the hyperedge is used for each
+        of its associated edges.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
+    edges = {}
+    hyperedges = []
+    attributes_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            attributes_dem.append(instr)
+            continue
+
+        # it could be possible that an edge has been decomposed...
+        if has_separator(instr):
+            hyperedges.append(instr)
+            continue
+
+        if len(get_detectors(instr)) <= 2:
+            sorted_instr = sorted_dem_instr(instr, prob=0)
+            prob = instr.args_copy()[0]
+            if sorted_instr not in edges:
+                edges[sorted_instr] = 0
+            edges[sorted_instr] = xor_probs(prob, edges[sorted_instr])
+        else:
+            hyperedges.append(instr)
+
+    for hyperedge in hyperedges:
+        for edge in decomposed_instrs(hyperedge, prob_method=prob_method):
+            if len(get_detectors(edge)) > 2:
+                raise ValueError(f"Non-decomposed hyperedge found in dem: {edge}.")
+
+            sorted_instr = sorted_dem_instr(edge, prob=0)
+            if sorted_instr not in edges:
+                raise ValueError(
+                    f"Edge '{edge}' found in a decomposition is not an existing edge in the DEM."
+                )
+
+            prob = edge.args_copy()[0]
+            edges[sorted_instr] = xor_probs(prob, edges[sorted_instr])
+
+    decomposed_dem = stim.DetectorErrorModel()
+    for edge, prob in edges.items():
+        instr = stim.DemInstruction("error", args=[prob], targets=edge.targets_copy())
+        decomposed_dem.append(instr)
+
+    decomposed_dem += attributes_dem
 
     return decomposed_dem
