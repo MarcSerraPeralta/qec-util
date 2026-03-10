@@ -72,7 +72,7 @@ def decompose_hyperedges_to_edges(
     return decomposed_dem
 
 
-def decomposed_dem(
+def decomposed_graphlike_dem(
     dem: stim.DetectorErrorModel, prob_method: str = "same"
 ) -> stim.DetectorErrorModel:
     """Returns the decomposed DEM (containing only edges) for the given DEM.
