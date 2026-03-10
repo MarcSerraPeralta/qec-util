@@ -2,7 +2,7 @@ from collections.abc import Iterable
 
 import stim
 
-from .util import xor_lists
+from .util import xor_lists, xor_probs
 
 
 def get_detectors(dem_instr: stim.DemInstruction) -> tuple[int, ...]:
@@ -263,3 +263,25 @@ def get_labels_from_detectors(
         labels.append((coords_to_anc[coords[:-1]], coords[-1]))
 
     return labels
+
+
+def merge_instrs(*instrs: stim.DemInstruction) -> stim.DemInstruction:
+    """Merges DEM error instructions or raises an error if they do not flip
+    the same detectors and observables. Note that the decomposition information is removed."""
+    if any(not isinstance(i, stim.DemInstruction) for i in instrs):
+        raise TypeError("At least one given instruction is not a stim.DemInstruction.")
+    if any(i.type != "error" for i in instrs):
+        raise TypeError("The given instructions must corresponds to errors.")
+
+    unique_instrs = set([sorted_dem_instr(i, prob=0) for i in instrs])
+    if len(unique_instrs) != 1:
+        raise ValueError(
+            "The given instructions do not flip the same detectors and observables."
+        )
+
+    probs = [i.args_copy()[0] for i in instrs]
+    prob = xor_probs(*probs)
+    new_instr = stim.DemInstruction(
+        "error", args=[prob], targets=unique_instrs.pop().targets_copy()
+    )
+    return new_instr

@@ -10,6 +10,7 @@ from .dems import (
     get_max_weight_hyperedge,
     is_instr_in_dem,
     only_errors,
+    prepare_distance2_dem_for_pymatching,
     remove_gauge_detectors,
     remove_hyperedges,
     separate_edges_and_hyperedges,
@@ -34,6 +35,7 @@ __all__ = [
     "remove_hyperedges",
     "get_labels_from_detectors",
     "decompose_hyperedges_to_edges",
+    "prepare_distance2_dem_for_pymatching",
     "separate_edges_and_hyperedges",
     "decomposed_graphlike_dem",
 ]

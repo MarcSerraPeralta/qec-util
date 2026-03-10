@@ -12,6 +12,7 @@ from qec_util.dems import (
     get_max_weight_hyperedge,
     is_instr_in_dem,
     only_errors,
+    prepare_distance2_dem_for_pymatching,
     remove_gauge_detectors,
     remove_hyperedges,
     separate_edges_and_hyperedges,
@@ -417,5 +418,32 @@ def test_separate_edges_and_hyperedges():
 
     assert graph_dem == expected_graph_dem
     assert hyper_dem == expected_hyper_dem
+
+    return
+
+
+def test_prepare_distance2_dem_for_pymatching():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 D1
+        error(0.1) D0 L0
+        error(0.2) D0
+        error(0.4) D3 D5
+        logical_observable L0
+        """
+    )
+
+    new_dem = prepare_distance2_dem_for_pymatching(dem)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 D1
+        error(0.2) D0
+        error(0.4) D3 D5
+        logical_observable L0
+        """
+    )
+
+    assert new_dem == expected_dem
 
     return

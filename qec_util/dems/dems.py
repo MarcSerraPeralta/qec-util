@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 
+import numpy as np
 import stim
 
-from ..dem_instrs import get_detectors, get_observables, sorted_dem_instr
+from ..dem_instrs import get_detectors, get_observables, merge_instrs, sorted_dem_instr
 
 
 def remove_gauge_detectors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
@@ -428,3 +429,53 @@ def separate_edges_and_hyperedges(
             hyper_dem.append(instr)
 
     return graph_dem, hyper_dem
+
+
+def prepare_distance2_dem_for_pymatching(
+    dem: stim.DetectorErrorModel,
+) -> stim.DetectorErrorModel:
+    """Removes edges that will never be picked by pymatching, in particular
+    it removes the lowest probability edges that trigger the same detectors
+    but have different logical effect (thus circuit distance = 2).
+
+    For example, given ``error(0.1) D0`` and ``error(0.2) D0 L0``, the first error
+    will never be picked by pymatching because it is less likely than the second one.
+
+    This avoids a problem with pymatching as it does handle this situation correctly.
+    """
+    edges = {}
+    attributes_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            attributes_dem.append(instr)
+            continue
+
+        detectors = get_detectors(instr)
+        if len(detectors) > 2:
+            raise ValueError(f"'dem' contains hyperedges: {instr}.")
+
+        if detectors not in edges:
+            edges[detectors] = []
+        edges[detectors].append(instr)
+
+    new_dem = stim.DetectorErrorModel()
+    for instrs in edges.values():
+        if len(instrs) == 1:
+            new_dem.append(instrs[0])
+            continue
+
+        unique_obs = set([get_observables(i) for i in instrs])
+        if len(unique_obs) == 1:
+            new_dem.append(merge_instrs(*instrs))
+            continue
+
+        sets = {obs: [] for obs in unique_obs}
+        for instr in instrs:
+            sets[get_observables(instr)].append(instr)
+        options = [merge_instrs(*i) for i in sets.values()]
+        probs = [i.args_copy()[0] for i in options]
+        index = np.argmax(probs)
+        new_dem.append(options[index])
+
+    new_dem += attributes_dem
+    return new_dem
