@@ -1,3 +1,4 @@
+import pytest
 import stim
 
 from qec_util.dem_instrs import (
@@ -6,6 +7,7 @@ from qec_util.dem_instrs import (
     get_labels_from_detectors,
     get_observables,
     has_separator,
+    merge_instrs,
     remove_detectors,
     sorted_dem_instr,
 )
@@ -159,5 +161,28 @@ def test_decomposed_instrs():
     )
 
     assert new_dem == expected_dem
+
+    return
+
+
+def test_merge_instrs():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D1 D2 L0
+        error(0.2) D2 D1 L0 ^ D0
+        error(0.1) D0
+        """
+    )
+
+    new_instr = merge_instrs(dem[0], dem[1])
+
+    expected_instr = stim.DetectorErrorModel("error(0.26) D0 D1 D2 L0")[0]
+
+    assert new_instr == expected_instr
+
+    _ = merge_instrs(dem[0], dem[0], dem[0])
+
+    with pytest.raises(ValueError):
+        _ = merge_instrs(dem[0], dem[2])
 
     return
