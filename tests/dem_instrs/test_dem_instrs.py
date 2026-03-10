@@ -1,6 +1,7 @@
 import stim
 
 from qec_util.dem_instrs import (
+    decomposed_instrs,
     get_detectors,
     get_labels_from_detectors,
     get_observables,
@@ -129,4 +130,34 @@ def test_get_labels_from_detectors():
     assert get_labels_from_detectors(
         [13], det_coords=det_coords, anc_coords=anc_coords
     ) == [("X2", 3)]
+    return
+
+
+def test_decomposed_instrs():
+    dem_instr = stim.DetectorErrorModel("error(0.1) D0 L0 ^ D1 L1 ^ D0")[0]
+
+    new_dem = decomposed_instrs(dem_instr)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 L0
+        error(0.1) D1 L1
+        error(0.1) D0
+        """
+    )
+
+    assert new_dem == expected_dem
+
+    new_dem = decomposed_instrs(dem_instr, prob_method="zero")
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0) D0 L0
+        error(0) D1 L1
+        error(0) D0
+        """
+    )
+
+    assert new_dem == expected_dem
+
     return
