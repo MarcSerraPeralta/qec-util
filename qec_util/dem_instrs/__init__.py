@@ -1,5 +1,6 @@
 from .dem_instrs import (
     decomposed_detectors,
+    decomposed_instrs,
     decomposed_observables,
     get_detectors,
     get_labels_from_detectors,
@@ -17,6 +18,7 @@ __all__ = [
     "has_separator",
     "decomposed_detectors",
     "decomposed_observables",
+    "decomposed_instrs",
     "remove_detectors",
     "sorted_dem_instr",
     "get_labels_from_detectors",

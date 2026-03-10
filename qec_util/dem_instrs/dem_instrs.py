@@ -109,6 +109,51 @@ def decomposed_observables(dem_instr: stim.DemInstruction) -> list[tuple[int, ..
     return list_obs
 
 
+def decomposed_instrs(
+    dem_instr: stim.DemInstruction, prob_method="same"
+) -> stim.DetectorErrorModel:
+    """Returns a DEM corresponding to the decomposed error mechanisms of the given isntruction.
+
+    Parameters
+    ----------
+    dem_instr
+        Detector error model (DEM) instruction.
+    prob_method
+        Method for giving probabilities to the decomposed error mechanisms.
+        The default option is ``'same'`` which gives the same probability to
+        the decomposed error mechansisms as the one in ``dem_instr``.
+        The other option is ``'zero'`` which sets the probability to ``0``.
+    """
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
+    if dem_instr.type != "error":
+        raise ValueError(f"'dem_instr' is not an error, it is {dem_instr.type}.")
+    if prob_method not in ("same", "zero"):
+        raise ValueError(
+            "The available options for 'prob_method' are 'same' and 'zero', but {prob_method} was given."
+        )
+
+    prob = dem_instr.args_copy()[0] if prob_method == "same" else 0
+    current = []
+    dem = stim.DetectorErrorModel()
+    for e in dem_instr.targets_copy():
+        if e.is_separator():
+            # build DemInstruction
+            instr = stim.DemInstruction("error", args=[prob], targets=current)
+            dem.append(instr)
+            current = []
+        else:
+            current.append(e)
+
+    # flush remaining targets
+    instr = stim.DemInstruction("error", args=[prob], targets=current)
+    dem.append(instr)
+
+    return dem
+
+
 def remove_detectors(
     dem_instr: stim.DemInstruction, dets: Iterable[int]
 ) -> stim.DemInstruction:
