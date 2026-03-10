@@ -12,6 +12,7 @@ from .dems import (
     only_errors,
     remove_gauge_detectors,
     remove_hyperedges,
+    separate_edges_and_hyperedges,
 )
 from .hyperedge_decomposition import decompose_hyperedges_to_edges
 
@@ -30,4 +31,5 @@ __all__ = [
     "remove_hyperedges",
     "get_labels_from_detectors",
     "decompose_hyperedges_to_edges",
+    "separate_edges_and_hyperedges",
 ]

@@ -13,6 +13,8 @@ from qec_util.dems import (
     is_instr_in_dem,
     only_errors,
     remove_gauge_detectors,
+    remove_hyperedges,
+    separate_edges_and_hyperedges,
 )
 
 
@@ -353,5 +355,67 @@ def test_only_errors():
     )
 
     assert new_dem == expected_dem
+
+    return
+
+
+def test_remove_hyperedges():
+    dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1 L1
+        error(0.1) D1 D2 D3 L1
+        detector(1, 1.1) D0
+        logical_observable L0
+        """
+    )
+
+    new_dem = remove_hyperedges(dem)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1 L1
+        detector(1, 1.1) D0
+        logical_observable L0
+        """
+    )
+
+    assert new_dem == expected_dem
+
+    return
+
+
+def test_separate_edges_and_hyperedges():
+    dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1 L1
+        error(0.1) D1 D2 D3 L1
+        detector(1, 1.1) D0
+        logical_observable L0
+        """
+    )
+
+    graph_dem, hyper_dem = separate_edges_and_hyperedges(dem)
+
+    expected_graph_dem = stim.DetectorErrorModel(
+        """
+        error(1) D2 D3 L0
+        error(0.1) D1 L1
+        detector(1, 1.1) D0
+        logical_observable L0
+        """
+    )
+    expected_hyper_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D1 D2 D3 L1
+        detector(1, 1.1) D0
+        logical_observable L0
+        """
+    )
+
+    assert graph_dem == expected_graph_dem
+    assert hyper_dem == expected_hyper_dem
 
     return
