@@ -3,6 +3,84 @@ from collections.abc import Sequence
 import stim
 
 SQ_MEASUREMENTS = ["M", "MX", "MY", "MZ"]
+STIM_INSTRS = (
+    ["I", "X", "Y", "Z"]
+    + [
+        "C_NXYZ",
+        "C_NZYX",
+        "C_XNYZ",
+        "C_XYNZ",
+        "C_XYZ",
+        "C_ZNYX",
+        "C_ZYNX",
+        "C_ZYX",
+        "H",
+        "H_NXY",
+        "H_NXZ",
+        "H_NYZ",
+        "H_XY",
+        "H_XZ",
+        "H_YZ",
+        "S",
+        "SQRT_X",
+        "SQRT_X_DAG",
+        "SQRT_Y",
+        "SQRT_Y_DAG",
+        "SQRT_Z",
+        "SQRT_Z_DAG",
+        "S_DAG",
+    ]
+    + [
+        "CNOT",
+        "CX",
+        "CXSWAP",
+        "CY",
+        "CZ",
+        "CZSWAP",
+        "II",
+        "ISWAP",
+        "ISWAP_DAG",
+        "SQRT_XX",
+        "SQRT_XX_DAG",
+        "SQRT_YY",
+        "SQRT_YY_DAG",
+        "SQRT_ZZ",
+        "SQRT_ZZ_DAG",
+        "SWAP",
+        "SWAPCX",
+        "SWAPCZ",
+        "XCX",
+        "XCY",
+        "XCZ",
+        "YCX",
+        "YCY",
+        "YCZ",
+        "ZCX",
+        "ZCY",
+        "ZCZ",
+    ]
+    + [
+        "CORRELATED_ERROR",
+        "DEPOLARIZE1",
+        "DEPOLARIZE2",
+        "E",
+        "ELSE_CORRELATED_ERROR",
+        "HERALDED_ERASE",
+        "HERALDED_PAULI_CHANNEL_1",
+        "II_ERROR",
+        "I_ERROR",
+        "PAULI_CHANNEL_1",
+        "PAULI_CHANNEL_2",
+        "X_ERROR",
+        "Y_ERROR",
+        "Z_ERROR",
+    ]
+    + ["M", "MR", "MRX", "MRY", "MRZ", "MX", "MY", "MZ", "R", "RX", "RY", "RZ"]
+    + ["MXX", "MYY", "MZZ"]
+    + ["MPP", "SPP", "SPP_DAG"]
+    + ["REPEAT"]
+    + ["DETECTOR", "MPAD", "OBSERVABLE_INCLUDE", "QUBIT_COORDS", "SHIFT_COORDS", "TICK"]
+)
 
 
 def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
@@ -279,3 +357,33 @@ def format_to_rec_targets(circuit_str: str, qubit_inds: dict[str, int]) -> stim.
         new_circuit_str += prefix + " ".join(new_targets) + "\n"
 
     return stim.Circuit(new_circuit_str)
+
+
+def remove_non_native_instrs(circuit_str: str) -> str:
+    """Removes non-native (flattened) circuit instructions in a string corresponding
+    to a Stim circuit."""
+    if not isinstance(circuit_str, str):
+        raise TypeError(
+            f"'circuit_str' must be a str, but {type(circuit_str)} was given."
+        )
+
+    new_circuit_str = ""
+    for line in circuit_str.split("\n"):
+        line = line.lstrip()  # remove initial spaces and tabs
+        index1, index2 = line.find(" "), line.find("(")
+        index = index1 if index2 == -1 else min(index1, index2)
+
+        if index == -1:
+            instruction = line
+        else:
+            instruction = line[:index]
+
+        if instruction == "REPEAT":
+            raise ValueError("'REPEAT' blocks are not supported.")
+
+        if instruction in STIM_INSTRS:
+            new_circuit_str += line + "\n"
+
+    # remove extra "\n" added
+    new_circuit_str = new_circuit_str[:-1]
+    return new_circuit_str

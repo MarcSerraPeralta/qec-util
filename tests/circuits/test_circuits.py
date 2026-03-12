@@ -8,6 +8,7 @@ from qec_util.circuits import (
     observables_to_detectors,
     remove_detectors_except,
     remove_gauge_detectors,
+    remove_non_native_instrs,
 )
 
 
@@ -326,5 +327,31 @@ def test_formatting_rec_targets():
     new_circuit = format_to_rec_targets(circuit_str, qubit_inds)
 
     assert new_circuit == circuit
+
+    return
+
+
+def test_remove_non_native_instrs():
+    circuit_str = """
+R 0 1
+M(0.1) 2
+TICK
+DETECTOR rec[-1] rec[-3]
+S_DAG 2
+LEAKAGE 1 0
+LEAKAGE_NOISE(0.1) 1 0"""
+
+    new_circuit_str = remove_non_native_instrs(circuit_str)
+
+    expected_circuit_str = """R 0 1
+M(0.1) 2
+TICK
+DETECTOR rec[-1] rec[-3]
+S_DAG 2"""
+
+    assert new_circuit_str == expected_circuit_str
+
+    with pytest.raises(ValueError):
+        _ = remove_non_native_instrs(circuit_str + "\nREPEAT 0 {")
 
     return
