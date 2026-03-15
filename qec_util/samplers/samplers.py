@@ -43,7 +43,7 @@ def sample_failures(
     ),
     extra_metrics: Callable[[BinVect], ExtraMetrics] = lambda _: {},
     extra_metrics_ps: Callable[[BinVect], ExtraMetrics] = lambda _: {},
-    verbose: bool = True,
+    verbose: int = 2,
 ) -> tuple[int, int, int, dict[str, int | float]]:
     """Samples decoding failures until ALL the MINIMUM requirements have been
     fulfilled (i.e. ``min_failures``, ``min_time``, ``min_samples``, ``min_samples_ps``)
@@ -128,7 +128,9 @@ def sample_failures(
         The keys in ``extra_metrics_ps`` must be different than ones in
         ``extra_metrics``.
     verbose
-        Flag to print information during sampling. By default, ``False``.
+        Level of verbose during sampling. By default, the maximum level is
+        selected (``2``). To not print information, select ``0`` or ``False``.
+
 
     Returns
     -------
@@ -190,7 +192,13 @@ def sample_failures(
     num_failures, num_samples_ps, num_samples, runtime = 0, 0, 0, 0
 
     def print_v(string: str):
-        if verbose:
+        if verbose == 1:
+            print(
+                f"\r\033[Kfailures={num_failures} ps-samples={num_samples_ps} "
+                f"samples={num_samples} seconds={runtime:0.3f} {string}",
+                end="",
+            )
+        elif verbose == 2:
             print(datetime.now(), string)
         return
 
