@@ -269,6 +269,8 @@ def sample_failures(
             # check if desired samples/failures have been reached
             if finished():
                 print_v("File has enough samples and failures.")
+                if verbose == 1:
+                    print("")
                 return num_failures, num_samples_ps, num_samples, extra
         else:
             # add header
@@ -326,6 +328,8 @@ def sample_failures(
             )
 
     print_v("Sampling conditions are reached, finished sampling.")
+    if verbose == 1:
+        print("")
     return num_failures, num_samples_ps, num_samples, extra
 
 
