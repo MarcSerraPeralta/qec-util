@@ -42,6 +42,11 @@ def test_sampler_to_file(tmp_path: pathlib.Path):
     assert extra == read_extra
     assert "seconds" in extra
 
+    with open(tmp_path / "tmp_file.csv") as file:
+        header = file.readline()[:-1]
+
+    assert header == "num_failures_ps,num_samples_ps,num_samples,seconds"
+
     return
 
 
@@ -95,6 +100,11 @@ def test_sampler_extra_metrics(tmp_path: pathlib.Path):
     assert extra == read_extra
     assert extra["test"] == 0
     assert extra["seconds"] > 0
+
+    with open(tmp_path / "tmp_file_extra_metrics.csv") as file:
+        header = file.readline()[:-1]
+
+    assert header == "num_failures_ps,num_samples_ps,num_samples,seconds,test"
 
     with pytest.raises(ValueError):
         _ = sample_failures(
