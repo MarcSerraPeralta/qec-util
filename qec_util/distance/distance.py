@@ -47,16 +47,24 @@ def get_circuit_distance(
         raise ValueError(
             f"'dem' must be a 'stim.DetectorErrorModel', but {type(dem)} was given."
         )
+    if dem.num_observables == 0:
+        return 0, stim.DetectorErrorModel()
 
-    obs_inds = list(range(dem.num_observables))
-    return get_circuit_distance_observable(dem, obs_inds=obs_inds)
+    d_circ: int = np.inf
+    error: stim.DetectorErrorModel = None
+    for o in range(dem.num_observables):
+        _d_circ, _error = get_circuit_distance_observable(dem, obs_inds=[o])
+        if _d_circ < d_circ:
+            d_circ, error = _d_circ, _error
+    return d_circ, error
 
 
 def get_circuit_distance_observable(
     dem: stim.DetectorErrorModel, obs_inds: int | Sequence[int]
 ) -> tuple[int, stim.DetectorErrorModel]:
-    """Returns the minimum number of faults to flip the specified logical
-    observable without triggering any detectors given the detector error model.
+    """Returns the minimum number of faults to flip (all) the specified logical
+    observable(s) without triggering any detectors given the detector error model.
+    Note that the returned error can trigger other observables that are not in ``obs_inds``.
 
     Parameters
     ----------
