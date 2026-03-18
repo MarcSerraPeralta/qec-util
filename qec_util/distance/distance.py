@@ -64,7 +64,7 @@ def get_circuit_distance_observable(
 ) -> tuple[int, stim.DetectorErrorModel]:
     """Returns the minimum number of faults to flip (all) the specified logical
     observable(s) without triggering any detectors given the detector error model.
-    Note that the given error can trigger other observables that are not given.
+    Note that the returned error can trigger other observables that are not in ``obs_inds``.
 
     Parameters
     ----------
