@@ -23,6 +23,38 @@ def test_get_circuit_distance():
     assert isinstance(error, stim.DetectorErrorModel)
     assert len(error) == 3
 
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 L0
+        error(0.1) D1 D0
+        error(0.1) D1
+        error(0.1) D1 D2 L1
+        error(0.1) D2
+        """
+    )
+
+    d_circ, error = get_circuit_distance(dem)
+
+    assert d_circ == 3
+    assert isinstance(error, stim.DetectorErrorModel)
+    assert len(error) == 3
+
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 L0 L1
+        error(0.1) D1 D0
+        error(0.1) D1
+        error(0.1) D1 D2 L0
+        error(0.1) D2
+        """
+    )
+
+    d_circ, error = get_circuit_distance(dem)
+
+    assert d_circ == 3
+    assert isinstance(error, stim.DetectorErrorModel)
+    assert len(error) == 3
+
     return
 
 
