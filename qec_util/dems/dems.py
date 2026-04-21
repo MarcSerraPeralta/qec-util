@@ -3,7 +3,15 @@ from collections.abc import Sequence
 import numpy as np
 import stim
 
-from ..dem_instrs import get_detectors, get_observables, merge_instrs, sorted_dem_instr
+from ..dem_instrs import (
+    get_detectors,
+    get_observables,
+    merge_instrs,
+    prob_indep_depol1,
+    prob_indep_depol2,
+    sorted_dem_instr,
+    xor_probs,
+)
 
 
 def remove_gauge_detectors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
@@ -384,6 +392,69 @@ def only_errors(dem: stim.DetectorErrorModel) -> stim.DetectorErrorModel:
     for instr in dem.flattened():
         if instr.type == "error":
             new_dem.append(instr)
+    return new_dem
+
+
+def remove_fake_errors(
+    circuit: stim.Circuit, dem: stim.DetectorErrorModel
+) -> stim.DetectorErrorModel:
+    """
+    Removes errors in DEM that are due to non-deterministic detectors (fake errors).
+    This requires knowing the circuit because some real errors can be hidden in
+    the 50/50 statistics, e.g. 1/2 * p + 1/2 * (1 - p) = 1/2.
+
+    Notes
+    -----
+    Note that when dealing with non-deterministic detectors, there is a known
+    issue in Stim (issue 971) regarding the location of the anticommuting resets
+    in the circuit. See ``qec_util.circuits.move_first_resets_to_beginning``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(f"'dem' must be a stim.Circuit, but {type(circuit)} was given.")
+
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            new_dem.append(instr)
+            continue
+        if instr.args_copy()[0] != 0.5:
+            new_dem.append(instr)
+            continue
+
+        dem_filter = stim.DetectorErrorModel()
+        dem_filter.append(instr)
+        errors = circuit.explain_detector_error_model_errors(dem_filter=dem_filter)[
+            0
+        ].circuit_error_locations
+        if len(errors) == 0:
+            # 50/50 statistics in detectors only comming from anticommuting resets
+            continue
+
+        probs = []
+        for error in errors:
+            p = error.instruction_targets.args[0]
+            if error.instruction_targets.gate in ("X_ERROR", "Y_ERROR", "Z_ERROR"):
+                probs.append(p)
+            elif error.instruction_targets.gate == "DEPOLARIZE1":
+                probs.append(prob_indep_depol1(p))
+            elif error.instruction_targets.gate == "DEPOLARIZE2":
+                probs.append(prob_indep_depol2(p))
+            elif error.instruction_targets.gate in ("M", "MX", "MY", "MZ"):
+                probs.append(p)
+            else:
+                raise ValueError(
+                    f"Error from {error.instruction_targets.gate} not implemented."
+                )
+        new_prob = xor_probs(*probs)
+        new_instr = stim.DemInstruction(
+            type="error", args=[new_prob], targets=instr.targets_copy()
+        )
+        new_dem.append(new_instr)
+
     return new_dem
 
 
