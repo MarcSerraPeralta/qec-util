@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import stim
 
@@ -13,6 +14,7 @@ from qec_util.dems import (
     is_instr_in_dem,
     only_errors,
     prepare_distance2_dem_for_pymatching,
+    remove_fake_errors,
     remove_gauge_detectors,
     remove_hyperedges,
     separate_edges_and_hyperedges,
@@ -443,6 +445,142 @@ def test_prepare_distance2_dem_for_pymatching():
         logical_observable L0
         """
     )
+
+    assert new_dem == expected_dem
+
+    return
+
+
+def test_remove_fake_errors():
+    circuit = stim.Circuit(
+        """
+        R 0
+        Z_ERROR(0.1) 0
+        MX 0
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.1) D0")
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        DEPOLARIZE1(0.1) 0
+        MX 0
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.06666666666666667) D0")
+
+    assert len(new_dem) == len(expected_dem)
+    assert new_dem[0].targets_copy() == expected_dem[0].targets_copy()
+    assert np.isclose(new_dem[0].args_copy()[0], expected_dem[0].args_copy()[0])
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        MX(0.1) 0
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.1) D0")
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        X_ERROR(0.1) 0
+        MX 0
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("")
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        RX 1
+        TICK
+        CNOT 1 0
+        TICK
+        X_ERROR(0.1) 0
+        TICK
+        M 0 1
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.1) D0")
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        RX 1
+        TICK
+        CNOT 1 0
+        TICK
+        X_ERROR(0.1) 0
+        TICK
+        M 0 1
+        DETECTOR rec[-2] rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.1) D0")
+
+    assert new_dem == expected_dem
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        RX 1
+        X_ERROR(0.1) 1
+        TICK
+        CNOT 1 0
+        TICK
+        TICK
+        M 0 1
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        """
+    )
+    dem = circuit.detector_error_model(allow_gauge_detectors=True)
+
+    new_dem = remove_fake_errors(circuit, dem)
+
+    expected_dem = stim.DetectorErrorModel("error(0.1) D0 D1")
 
     assert new_dem == expected_dem
 

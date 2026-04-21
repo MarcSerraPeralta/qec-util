@@ -1,3 +1,4 @@
+import math
 from collections.abc import Iterable
 from typing import TypeVar
 
@@ -46,3 +47,32 @@ def xor_probs(*probs: float | int) -> float | int:
     for prob in probs[1:]:
         odd_prob = xor_two_probs(prob, odd_prob)
     return odd_prob
+
+
+def prob_indep_depol1(p):
+    """Returns the independent probability for an individual mechanism (e.g. ``Y``)
+    in a ``DEPOLARIZE1`` channel. This is the probability that Stim uses to
+    decompose the ``DEPOLARIZE1`` channel into ``X_ERROR``, ``Y_ERROR``, and
+    ``Z_ERROR``. See https://quantumcomputing.stackexchange.com/questions/45779
+    for more information.
+
+    Parameters
+    ----------
+    p
+        Probability (argument) of the ``DEPOLARIZE1`` channel.
+    """
+    return 0.5 - 0.5 * math.sqrt(1 - 4 * p / 3)
+
+
+def prob_indep_depol2(p):
+    """Returns the independent probability for an individual mechanism (e.g. ``Y``)
+    in a ``DEPOLARIZE2`` channel. This is the probability that Stim uses to
+    decompose the ``DEPOLARIZE2`` channel. See
+    https://quantumcomputing.stackexchange.com/questions/45779 for more information.
+
+    Parameters
+    ----------
+    p
+        Probability (argument) of the ``DEPOLARIZE2`` channel.
+    """
+    return 0.5 - 0.5 * (1 - 16 * p / 15) ** 0.125

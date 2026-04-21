@@ -11,6 +11,7 @@ from .dems import (
     is_instr_in_dem,
     only_errors,
     prepare_distance2_dem_for_pymatching,
+    remove_fake_errors,
     remove_gauge_detectors,
     remove_hyperedges,
     separate_edges_and_hyperedges,
@@ -38,4 +39,5 @@ __all__ = [
     "prepare_distance2_dem_for_pymatching",
     "separate_edges_and_hyperedges",
     "decomposed_graphlike_dem",
+    "remove_fake_errors",
 ]

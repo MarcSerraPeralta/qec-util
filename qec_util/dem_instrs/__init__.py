@@ -11,7 +11,7 @@ from .dem_instrs import (
     sorted_dem_instr,
 )
 from .hyperedge_decomposition import decompose_hyperedge_to_edges
-from .util import xor_lists, xor_probs
+from .util import prob_indep_depol1, prob_indep_depol2, xor_lists, xor_probs
 
 __all__ = [
     "get_detectors",
@@ -27,4 +27,6 @@ __all__ = [
     "xor_probs",
     "xor_lists",
     "decompose_hyperedge_to_edges",
+    "prob_indep_depol1",
+    "prob_indep_depol2",
 ]
