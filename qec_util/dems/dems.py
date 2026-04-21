@@ -436,7 +436,9 @@ def remove_fake_errors(
             f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
         )
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'dem' must be a stim.Circuit, but {type(circuit)} was given.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
 
     new_dem = stim.DetectorErrorModel()
     for instr in dem.flattened():
