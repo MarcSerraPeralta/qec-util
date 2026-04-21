@@ -403,10 +403,32 @@ def remove_fake_errors(
     This requires knowing the circuit because some real errors can be hidden in
     the 50/50 statistics, e.g. 1/2 * p + 1/2 * (1 - p) = 1/2.
 
+    Example:
+
+    Stim circuit:
+
+    .. code:
+
+        R 0
+        Z_ERROR(0.1) 0
+        MX 0
+        DETECTOR rec[-1]
+
+    DEM:
+
+    .. code:
+        error(0.5) D0
+
+    DEM with only the statistics from errors (not from non-deterministic detectors):
+
+    .. code:
+        error(0.1) D0
+
+
     Notes
     -----
     Note that when dealing with non-deterministic detectors, there is a known
-    issue in Stim (issue 971) regarding the location of the anticommuting resets
+    issue in Stim (issue 971 in GitHub) regarding the location of the anticommuting resets
     in the circuit. See ``qec_util.circuits.move_first_resets_to_beginning``.
     """
     if not isinstance(dem, stim.DetectorErrorModel):
