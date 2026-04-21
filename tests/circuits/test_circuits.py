@@ -67,6 +67,11 @@ def test_move_first_resets_to_beginning():
 
     assert new_circuit == expected_circuit
 
+    circuit = stim.Circuit("X 0")
+
+    with pytest.raises(ValueError):
+        _ = move_first_resets_to_beginning(circuit)
+
     return
 
 
