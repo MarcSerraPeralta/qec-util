@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import stim
 
 SQ_MEASUREMENTS = ["M", "MX", "MY", "MZ"]
+SQ_RESETS = ["R", "RX", "RY", "RZ"]
 STIM_INSTRS = (
     ["I", "X", "Y", "Z"]
     + [
@@ -81,6 +82,60 @@ STIM_INSTRS = (
     + ["REPEAT"]
     + ["DETECTOR", "MPAD", "OBSERVABLE_INCLUDE", "QUBIT_COORDS", "SHIFT_COORDS", "TICK"]
 )
+
+
+def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
+    """Moves (backwards in time) the first resets for each qubit to appear
+    as the first (layer of) operations in the circuit in a single ."""
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+    circuit = circuit.flattened()
+
+    resets: dict[int, None | str] = {i: None for i in range(circuit.num_qubits)}
+    for instr in circuit[::-1]:
+        name = instr.name if instr.name in SQ_RESETS else None
+        for q in instr.targets_copy():
+            resets[q.value] = name
+
+    if any(r is None for r in resets.values()):
+        raise ValueError(
+            "All qubits must have explicit resets before their first operation."
+        )
+
+    new_circuit = stim.Circuit()
+
+    # add reset operations at beginning
+    split_resets: dict[str, list[int]] = {r: [] for r in SQ_RESETS}
+    for q, r in resets.items():
+        split_resets[r].append(q)
+    for r, qubits in split_resets.items():
+        if qubits == []:
+            continue
+        new_instr = stim.CircuitInstruction(
+            name=r, targets=[stim.GateTarget(q) for q in qubits]
+        )
+        new_circuit.append(new_instr)
+
+    # add remaining operations
+    missing_qubits = set(range(circuit.num_qubits))
+    for instr in circuit:
+        if instr.name not in SQ_RESETS:
+            new_circuit.append(instr)
+            continue
+        if not missing_qubits:
+            new_circuit.append(instr)
+            continue
+
+        targets = set([t.value for t in instr.targets_copy()])
+        new_targets = targets - missing_qubits
+        if new_targets:
+            new_instr = stim.CircuitInstruction(
+                name=instr.name, targets=[stim.GateTarget(t) for t in new_targets]
+            )
+            new_circuit.append(new_instr)
+        missing_qubits.difference_update(targets)
+
+    return new_circuit
 
 
 def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
