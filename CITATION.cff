@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: qec-util
+message: >-
+  Useful tools for QEC simulation with Stim
+type: software
+authors:
+  - given-names: Marc
+    family-names: Serra-Peralta
+    email: M.SerraPeralta@tudelft.nl
+    affiliation: 'QuTech, Delft University of Technology'
+    orcid: 'https://orcid.org/0000-0002-8000-8701'
+repository-code: "https://github.com/MarcSerraPeralta/qec-util"
+abstract: >-
+  A collection of utility methods and objects to aid with the simulation, decoding and analysis of QEC experiments.
+keywords:
+  - quantum
+  - quantum-computing
+  - quantum-error-correction
+  - stim
+license: MIT
