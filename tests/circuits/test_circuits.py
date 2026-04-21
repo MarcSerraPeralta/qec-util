@@ -4,12 +4,75 @@ import stim
 from qec_util.circuits import (
     format_rec_targets,
     format_to_rec_targets,
+    move_first_resets_to_beginning,
     move_observables_to_end,
     observables_to_detectors,
     remove_detectors_except,
     remove_gauge_detectors,
     remove_non_native_instrs,
 )
+
+
+def test_move_first_resets_to_beginning():
+    circuit = stim.Circuit(
+        """
+        TICK
+        R 0
+        RX 1
+        X 0
+        TICK
+        RY 2
+        TICK
+        M 0
+        R 0
+        """
+    )
+
+    new_circuit = move_first_resets_to_beginning(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0
+        RX 1
+        RY 2
+        TICK
+        X 0
+        TICK
+        TICK
+        M 0
+        R 0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit(
+        """
+        R 0
+        X 0
+        RX 0 1
+        """
+    )
+
+    new_circuit = move_first_resets_to_beginning(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0
+        RX 1
+        X 0
+        RX 0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit("X 0")
+
+    with pytest.raises(ValueError):
+        _ = move_first_resets_to_beginning(circuit)
+
+    return
 
 
 def test_remove_gauge_detectors():
