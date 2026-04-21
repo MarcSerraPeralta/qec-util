@@ -86,7 +86,8 @@ STIM_INSTRS = (
 
 def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
     """Moves (backwards in time) the first resets for each qubit to appear
-    as the first (layer of) operations in the circuit in a single ."""
+    as the first (layer of) operations in the circuit.
+    This is a workaround for issue 971 in Stim."""
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
     circuit = circuit.flattened()
