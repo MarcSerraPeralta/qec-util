@@ -451,9 +451,10 @@ def remove_fake_errors(
 
         dem_filter = stim.DetectorErrorModel()
         dem_filter.append(instr)
-        errors = circuit.explain_detector_error_model_errors(dem_filter=dem_filter)[
-            0
-        ].circuit_error_locations
+        explained_errors = circuit.explain_detector_error_model_errors(
+            dem_filter=dem_filter
+        )
+        errors = explained_errors[0].circuit_error_locations
         if len(errors) == 0:
             # 50/50 statistics in detectors only comming from anticommuting resets
             continue
