@@ -2,6 +2,7 @@ from .dem_instrs import (
     decomposed_detectors,
     decomposed_instrs,
     decomposed_observables,
+    detectors_to_observables,
     get_detectors,
     get_labels_from_detectors,
     get_observables,
@@ -29,4 +30,5 @@ __all__ = [
     "decompose_hyperedge_to_edges",
     "prob_indep_depol1",
     "prob_indep_depol2",
+    "detectors_to_observables",
 ]

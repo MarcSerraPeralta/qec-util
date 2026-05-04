@@ -6,6 +6,7 @@ from qec_util.dems import (
     contains_only_edges,
     convert_observables_to_detectors,
     dem_difference,
+    detectors_to_observables,
     disjoint_graphs,
     get_errors_triggering_detectors,
     get_flippable_detectors,
@@ -581,6 +582,59 @@ def test_remove_fake_errors():
     new_dem = remove_fake_errors(circuit, dem)
 
     expected_dem = stim.DetectorErrorModel("error(0.1) D0 D1")
+
+    assert new_dem == expected_dem
+
+    return
+
+
+def test_detectors_to_observables():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 D4 L2
+        detector(1, 1, 2) D100
+        detector(1, 1, 3) D0
+        """
+    )
+    det_to_obs = {
+        stim.target_relative_detector_id(0): stim.target_logical_observable_id(1),
+        stim.target_relative_detector_id(2): stim.target_logical_observable_id(3),
+    }
+
+    new_dem = detectors_to_observables(dem, det_to_obs)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) L1 ^ L1 L0 ^ L0
+        error(0.2) D1 L3 L2
+        error(0.2) D1 D4 L2
+        detector(1, 1, 2) D100
+        """
+    )
+
+    assert new_dem == expected_dem
+
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 D4 L2
+        detector(1, 1, 3) D0
+        """
+    )
+
+    new_dem = detectors_to_observables(dem, 1)
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 L0 L2
+        detector(1, 1, 3) D0
+        """
+    )
 
     assert new_dem == expected_dem
 

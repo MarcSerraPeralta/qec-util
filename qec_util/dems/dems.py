@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import numpy as np
 import stim
 
+from ..dem_instrs import detectors_to_observables as detectors_to_observables_instr
 from ..dem_instrs import (
     get_detectors,
     get_observables,
@@ -539,6 +540,11 @@ def prepare_distance2_dem_for_pymatching(
 
     This avoids a problem with pymatching as it does handle this situation correctly.
     """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+
     edges = {}
     attributes_dem = stim.DetectorErrorModel()
     for instr in dem.flattened():
@@ -574,4 +580,47 @@ def prepare_distance2_dem_for_pymatching(
         new_dem.append(options[index])
 
     new_dem += attributes_dem
+    return new_dem
+
+
+def detectors_to_observables(
+    dem: stim.DetectorErrorModel, det_to_obs: int | dict[stim.DemTarget, stim.DemTarget]
+) -> stim.DetectorErrorModel:
+    """Converts the specified detectors to observables in the given DEM.
+
+    Parameters
+    ----------
+    dem
+        Detector error model.
+    det_to_obs
+        Dictionary mapping detector targets to the corresponding observable targets.
+        If an integer ``n`` is provided, it is assumed that the last ``n`` detectors
+        correspond to the observables and will be labelled in ascending order,
+        i.e., ``detector[num_dets - n]`` will correspond to observable ``0``
+        and ``detector[num_dets - 1]`` will correspond to observable ``n-1``.
+    """
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if isinstance(det_to_obs, int):
+        det_to_obs = {
+            stim.target_relative_detector_id(
+                dem.num_detectors - det_to_obs + n
+            ): stim.target_logical_observable_id(n)
+            for n in range(det_to_obs)
+        }
+
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type == "error":
+            new_dem.append(detectors_to_observables_instr(instr, det_to_obs))
+        elif instr.type == "detector":
+            if instr.targets_copy()[0] in det_to_obs:
+                continue
+            else:
+                new_dem.append(instr)
+        else:
+            new_dem.append(instr)
+
     return new_dem

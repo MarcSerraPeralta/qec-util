@@ -285,3 +285,40 @@ def merge_instrs(*instrs: stim.DemInstruction) -> stim.DemInstruction:
         "error", args=[prob], targets=unique_instrs.pop().targets_copy()
     )
     return new_instr
+
+
+def detectors_to_observables(
+    dem_instr: stim.DemInstruction, det_to_obs: dict[stim.DemTarget, stim.DemTarget]
+) -> stim.DemInstruction:
+    """Converts the specified detectors to observables in the given DEM instruction.
+
+    Parameters
+    ----------
+    dem_instr
+        Detector error model instruction.
+    det_to_obs
+        Dictionary mapping detector targets to the corresponding observable targets.
+    """
+    if not isinstance(dem_instr, stim.DemInstruction):
+        raise TypeError(
+            f"'dem_instr' must be a stim.DemInstruction, but {type(dem_instr)} was given."
+        )
+    if dem_instr.type != "error":
+        raise TypeError(
+            f"'dem_instr' must be an 'error' instruction, but '{dem_instr.type}' was given."
+        )
+    if not isinstance(det_to_obs, dict):
+        raise TypeError(
+            f"'det_to_obs' must be a dict, but {type(det_to_obs)} was given."
+        )
+
+    targets = dem_instr.targets_copy()
+    new_targets = [det_to_obs.get(t, t) for t in targets]
+    if targets == new_targets:
+        return dem_instr
+
+    new_dem_instr = stim.DemInstruction(
+        type="error", args=dem_instr.args_copy(), targets=new_targets
+    )
+
+    return new_dem_instr
