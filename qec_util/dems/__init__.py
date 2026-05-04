@@ -3,6 +3,7 @@ from .dems import (
     contains_only_edges,
     convert_observables_to_detectors,
     dem_difference,
+    detectors_to_observables,
     disjoint_graphs,
     get_errors_triggering_detectors,
     get_flippable_detectors,
@@ -40,4 +41,5 @@ __all__ = [
     "separate_edges_and_hyperedges",
     "decomposed_graphlike_dem",
     "remove_fake_errors",
+    "detectors_to_observables",
 ]

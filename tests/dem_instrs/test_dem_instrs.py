@@ -3,6 +3,7 @@ import stim
 
 from qec_util.dem_instrs import (
     decomposed_instrs,
+    detectors_to_observables,
     get_detectors,
     get_labels_from_detectors,
     get_observables,
@@ -184,5 +185,37 @@ def test_merge_instrs():
 
     with pytest.raises(ValueError):
         _ = merge_instrs(dem[0], dem[2])
+
+    return
+
+
+def test_detectors_to_observables():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 D4 L2
+        """
+    )
+    det_to_obs = {
+        stim.target_relative_detector_id(0): stim.target_logical_observable_id(1),
+        stim.target_relative_detector_id(2): stim.target_logical_observable_id(3),
+    }
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) L1 ^ L1 L0 ^ L0
+        error(0.2) D1 L3 L2
+        error(0.2) D1 D4 L2
+        """
+    )
+
+    for instr, expected_instr in zip(dem, expected_dem):
+        new_instr = detectors_to_observables(instr, det_to_obs)
+        assert new_instr == expected_instr
+
+    dem = stim.DetectorErrorModel("detector(1, 1) D0")
+    with pytest.raises(TypeError):
+        _ = detectors_to_observables(dem[0], det_to_obs)
 
     return
