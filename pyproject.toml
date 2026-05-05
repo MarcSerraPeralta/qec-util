@@ -31,8 +31,18 @@ namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 dev = ["qec_util[all]", 
        "pip-tools", 
        "ruff",
-       "pytest",]
-all = ["networkx", "gurobipy", "scipy", "pymatching", "dem_decoders", "pyyaml", "matplotlib", "galois"]
+       "pytest",
+]
+all = ["networkx", 
+    "gurobipy", 
+    "scipy", 
+    "pymatching", 
+    "dem_decoders", 
+    "pyyaml", 
+    "matplotlib", 
+    "galois", 
+    "llvmlite >= 0.47.0", # for python 3.14
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
