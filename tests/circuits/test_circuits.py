@@ -7,9 +7,10 @@ from qec_util.circuits import (
     move_first_resets_to_beginning,
     move_observables_to_end,
     observables_to_detectors,
-    remove_detectors_except,
+    remove_detectors,
     remove_gauge_detectors,
     remove_non_native_instrs,
+    remove_observables,
 )
 
 
@@ -126,7 +127,7 @@ def test_remove_gauge_detectors():
     return
 
 
-def test_remove_detectors_except():
+def test_remove_detectors():
     circuit = stim.Circuit(
         """
         R 0 1 2 3
@@ -141,7 +142,7 @@ def test_remove_detectors_except():
         """
     )
 
-    new_circuit = remove_detectors_except(circuit)
+    new_circuit = remove_detectors(circuit)
 
     expected_circuit = stim.Circuit(
         """
@@ -170,7 +171,7 @@ def test_remove_detectors_except():
         """
     )
 
-    new_circuit = remove_detectors_except(circuit, [0, 2, 1000])
+    new_circuit = remove_detectors(circuit, [0, 2, 1000])
 
     expected_circuit = stim.Circuit(
         """
@@ -188,7 +189,7 @@ def test_remove_detectors_except():
     assert new_circuit == expected_circuit
 
     with pytest.raises(TypeError):
-        _ = remove_detectors_except(circuit, [1.2])
+        _ = remove_detectors(circuit, [1.2])
 
     return
 
@@ -416,5 +417,72 @@ S_DAG 2"""
 
     with pytest.raises(ValueError):
         _ = remove_non_native_instrs(circuit_str + "\nREPEAT 0 {")
+
+    return
+
+
+def test_remove_observables():
+    circuit = stim.Circuit(
+        """
+        R 0 1 2 3
+        X_ERROR(0.1) 0 1 2 3
+        MX 0
+        MZ 1 2 3
+        OBSERVABLE_INCLUDE(0) rec[-4]
+        OBSERVABLE_INCLUDE(3) rec[-3] rec[-1]
+        X 0
+        CNOT 1 0
+        OBSERVABLE_INCLUDE(9) rec[-4] rec[-2]
+        """
+    )
+
+    new_circuit = remove_observables(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0 1 2 3
+        X_ERROR(0.1) 0 1 2 3
+        MX 0
+        MZ 1 2 3
+        X 0
+        CNOT 1 0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit(
+        """
+        R 0 1 2 3
+        X_ERROR(0.1) 0 1 2 3
+        MX 0
+        MZ 1 2 3
+        OBSERVABLE_INCLUDE(0) rec[-4]
+        OBSERVABLE_INCLUDE(3) rec[-3] rec[-1]
+        X 0
+        CNOT 1 0
+        OBSERVABLE_INCLUDE(9) rec[-4] rec[-2]
+        """
+    )
+
+    new_circuit = remove_observables(circuit, [0, 3, 1000])
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0 1 2 3
+        X_ERROR(0.1) 0 1 2 3
+        MX 0
+        MZ 1 2 3
+        OBSERVABLE_INCLUDE(0) rec[-4]
+        OBSERVABLE_INCLUDE(3) rec[-3] rec[-1]
+        X 0
+        CNOT 1 0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    with pytest.raises(TypeError):
+        _ = remove_detectors(circuit, [1.2])
 
     return

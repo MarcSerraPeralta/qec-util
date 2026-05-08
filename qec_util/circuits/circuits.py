@@ -168,11 +168,10 @@ def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
     return new_circuit
 
 
-def remove_detectors_except(
+def remove_detectors(
     circuit: stim.Circuit, det_ids_exception: Sequence[int] = []
 ) -> stim.Circuit:
     """Removes all detectors from a circuit except the specified ones.
-    Useful for plotting individual detectors with ``stim.Circuit.diagram``.
 
     Parameters
     ----------
@@ -192,7 +191,7 @@ def remove_detectors_except(
         raise TypeError(
             f"'det_ids_exception' is not a Sequence, but a {type(det_ids_exception)}."
         )
-    if any([not isinstance(i, int) for i in det_ids_exception]):
+    if any(not isinstance(i, int) for i in det_ids_exception):
         raise TypeError(
             "'det_ids_exception' is not a sequence of ints, "
             f"{det_ids_exception} was given."
@@ -207,6 +206,47 @@ def remove_detectors_except(
 
         current_det_id += 1
         if current_det_id in det_ids_exception:
+            new_circuit.append(instr)
+
+    return new_circuit
+
+
+def remove_observables(
+    circuit: stim.Circuit, obs_ids_exception: Sequence[int] = []
+) -> stim.Circuit:
+    """Removes all observables from a circuit except the specified ones.
+
+    Parameters
+    ----------
+    circuit
+        Stim circuit.
+    obs_ids_exception
+        Index of the observables to not be removed.
+
+    Returns
+    -------
+    new_circuit
+        Stim circuit without observables except the ones in ``obs_ids_exception``.
+    """
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+    if not isinstance(obs_ids_exception, Sequence):
+        raise TypeError(
+            f"'obs_ids_exception' is not a Sequence, but a {type(obs_ids_exception)}."
+        )
+    if any(not isinstance(i, int) for i in obs_ids_exception):
+        raise TypeError(
+            "'obs_ids_exception' is not a sequence of ints, "
+            f"{obs_ids_exception} was given."
+        )
+
+    new_circuit = stim.Circuit()
+    for instr in circuit.flattened():
+        if instr.name != "OBSERVABLE_INCLUDE":
+            new_circuit.append(instr)
+            continue
+
+        if instr.gate_args_copy()[0] in obs_ids_exception:
             new_circuit.append(instr)
 
     return new_circuit
