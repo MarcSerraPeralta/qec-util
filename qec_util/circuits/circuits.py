@@ -282,7 +282,7 @@ def observables_to_detectors(
         targets = instr.targets_copy()
         if any(t.is_x_target or t.is_y_target or t.is_z_target for t in targets):
             raise ValueError(
-                f"Targets in observable definition cannot be Paulis, but {instr} was found."
+                f"Targets in observable definition cannot be Paulis, but '{instr}' was found."
             )
         obs = instr.gate_args_copy()[0]
         if obs in moved_observables:
