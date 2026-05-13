@@ -255,7 +255,9 @@ def remove_observables(
 def observables_to_detectors(
     circuit: stim.Circuit, observables: Sequence[int] | None = None
 ) -> stim.Circuit:
-    """Converts the logical observables of a circuit to detectors."""
+    """Converts the (specified) logical observables of a circuit to detectors.
+    By default, converts all logical observables to detectors.
+    It does not move the definition of the observables nor the detectors."""
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
     if observables is None:
