@@ -18,7 +18,7 @@ license = {file = "LICENSE"}
 readme = "README.md"
 dependencies = [
     "numpy",
-    "stim",
+    "stim >= 1.15.0", # for OBSERVABLE_INCLUDE(0) Z1
     "lmfit",
     "xarray",
 ]

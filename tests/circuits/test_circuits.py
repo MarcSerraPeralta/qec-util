@@ -207,6 +207,9 @@ def test_observables_to_detectors():
         CNOT 1 0
         DETECTOR(9) rec[-4] rec[-2]
         OBSERVABLE_INCLUDE(0) rec[-1]
+        R 0
+        M 0
+        OBSERVABLE_INCLUDE(1) rec[-1]
         """
     )
 
@@ -224,10 +227,52 @@ def test_observables_to_detectors():
         CNOT 1 0
         DETECTOR(9) rec[-4] rec[-2]
         DETECTOR(0) rec[-1]
+        R 0
+        M 0
+        DETECTOR(1) rec[-1]
         """
     )
 
     assert new_circuit == expected_circuit
+
+    new_circuit = observables_to_detectors(circuit, observables=[1])
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0 1 2 3
+        X_ERROR(0.1) 0 1 2 3
+        MX 0
+        MZ 1 2 3
+        DETECTOR(0) rec[-4]
+        DETECTOR(3) rec[-3] rec[-1]
+        X 0
+        CNOT 1 0
+        DETECTOR(9) rec[-4] rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        R 0
+        M 0
+        DETECTOR(1) rec[-1]
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit("OBSERVABLE_INCLUDE(0) Z0")
+
+    with pytest.raises(ValueError):
+        _ = observables_to_detectors(circuit)
+
+    circuit = stim.Circuit(
+        """
+        R 0 1
+        M 0 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-2]
+        """
+    )
+
+    with pytest.raises(ValueError):
+        _ = observables_to_detectors(circuit)
 
     return
 

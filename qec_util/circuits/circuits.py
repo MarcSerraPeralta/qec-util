@@ -252,20 +252,47 @@ def remove_observables(
     return new_circuit
 
 
-def observables_to_detectors(circuit: stim.Circuit) -> stim.Circuit:
-    """Converts the logical observables of a circuit to detectors."""
+def observables_to_detectors(
+    circuit: stim.Circuit, observables: Sequence[int] | None = None
+) -> stim.Circuit:
+    """Converts the (specified) logical observables of a circuit to detectors.
+    By default, converts all logical observables to detectors.
+    It does not move the definition of the observables nor the detectors."""
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+    if observables is None:
+        observables = list(range(circuit.num_observables))
+    if not isinstance(observables, Sequence):
+        raise TypeError(f"'observables' is not a sequence, but a {type(observables)}.")
+    if any(not isinstance(o, int) for o in observables):
+        raise TypeError("All elements in 'observables' must be ints.")
+    if min(observables) < 0 or max(observables) > circuit.num_observables:
+        raise ValueError("Elements in 'observables' must be valid observable indices.")
 
     new_circuit = stim.Circuit()
+    moved_observables = set()
     for instr in circuit.flattened():
         if instr.name != "OBSERVABLE_INCLUDE":
             new_circuit.append(instr)
             continue
+        if instr.gate_args_copy()[0] not in observables:
+            new_circuit.append(instr)
+            continue
 
         targets = instr.targets_copy()
-        args = instr.gate_args_copy()
-        new_instr = stim.CircuitInstruction("DETECTOR", gate_args=args, targets=targets)
+        if any(t.is_x_target or t.is_y_target or t.is_z_target for t in targets):
+            raise ValueError(
+                f"Targets in observable definition cannot be Paulis, but '{instr}' was found."
+            )
+        obs = instr.gate_args_copy()[0]
+        if obs in moved_observables:
+            raise ValueError(
+                f"Observables cannot be defined in multiple lines, but L{obs} is."
+            )
+        moved_observables.add(obs)
+        new_instr = stim.CircuitInstruction(
+            "DETECTOR", gate_args=[obs], targets=targets
+        )
         new_circuit.append(new_instr)
 
     return new_circuit

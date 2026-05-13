@@ -26,7 +26,7 @@ scipy==1.14.0
     # via lmfit
 six==1.16.0
     # via python-dateutil
-stim==1.13.0
+stim==1.15.0
     # via qec-util (pyproject.toml)
 tzdata==2024.1
     # via pandas
