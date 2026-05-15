@@ -312,7 +312,8 @@ def redefine_observables(
     circuit: stim.Circuit, new_observables: dict[int, Sequence[int]]
 ):
     """
-    Redefines the observables in the circuit as XORs of the current observables.
+    Redefines the observables at the end of the circuit as XORs of
+    the currently defined observables.
 
     Parameters
     ----------
@@ -321,7 +322,7 @@ def redefine_observables(
         see ``qec_util.circuits.move_observables_to_end``.
     new_observables
         The indices of the new observables and their corresponding definition
-        in terms of list of current observables to XOR
+        in terms of list of current observables to XOR.
     """
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(
@@ -341,7 +342,7 @@ def redefine_observables(
             break
         obs_id = circuit[-k - 1].gate_args_copy()[0]
         # must accumulate targets in a list because observable definitions
-        # can be split accross the circuit.
+        # can be split accross different circuit instructions.
         if obs_id not in obs_targets:
             obs_targets[obs_id] = []
         obs_targets[obs_id] += circuit[-k - 1].targets_copy()
