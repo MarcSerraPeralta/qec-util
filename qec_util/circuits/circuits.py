@@ -373,6 +373,7 @@ def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
         raise TypeError(
             f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
         )
+    circuit = circuit.flattened()
 
     new_circuit = stim.Circuit()
     obs = []
@@ -380,13 +381,33 @@ def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
     # therefore I need to take care of how many measurements are between the definition
     # and the end of the circuit (where I am going to define the deterministic observables)
     measurements = []
-    for i, instr in enumerate(circuit.flattened()):
-        if instr.name == "OBSERVABLE_INCLUDE":
-            obs.append(instr)
-            measurements.append(circuit[i:].num_measurements)
+    for i, instr in enumerate(circuit):
+        if instr.name != "OBSERVABLE_INCLUDE":
+            new_circuit.append(instr)
             continue
 
-        new_circuit.append(instr)
+        # observables can be defined with Paulis.
+        # if so, their definition must not be moved as it would change the observable.
+        if any(
+            t.is_x_target or t.is_y_target or t.is_z_target
+            for t in instr.targets_copy()
+        ):
+            # check if observable is already at the end of the circuit
+            end = True
+            for next_instr in circuit[i:]:
+                if next_instr.name != "OBSERVABLE_INCLUDE":
+                    end = False
+                    break
+            if end:
+                new_circuit.append(instr)
+                continue
+            else:
+                raise ValueError(
+                    f"Observable definition in terms of Paulis found: {instr}."
+                )
+
+        obs.append(instr)
+        measurements.append(circuit[i:].num_measurements)
 
     for k, ob in enumerate(obs):
         new_targets = [t.value - measurements[k] for t in ob.targets_copy()]
