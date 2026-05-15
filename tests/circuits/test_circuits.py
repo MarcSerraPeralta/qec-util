@@ -321,6 +321,43 @@ def test_move_observables_to_end():
 
     assert new_circuit == expected_circuit
 
+    circuit = stim.Circuit(
+        """
+        X 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        X 0
+        OBSERVABLE_INCLUDE(1) Z0
+        """
+    )
+
+    new_circuit = move_observables_to_end(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        X 0
+        M 0
+        X 0
+        OBSERVABLE_INCLUDE(1) Z0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit(
+        """
+        X 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) Z0
+        X 0
+        """
+    )
+
+    with pytest.raises(ValueError):
+        _ = move_observables_to_end(circuit)
+
     return
 
 
