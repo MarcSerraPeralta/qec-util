@@ -89,7 +89,9 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
     as the first (layer of) operations in the circuit.
     This is a workaround for issue 971 in Stim."""
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
     circuit = circuit.flattened()
 
     resets: dict[int, None | str] = {i: None for i in range(circuit.num_qubits)}
@@ -142,7 +144,9 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
 def remove_gauge_detectors(circuit: stim.Circuit) -> stim.Circuit:
     """Removes the gauge detectors from the given circuit."""
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
 
     dem = circuit.detector_error_model(allow_gauge_detectors=True)
     gauge_dets = []
@@ -186,7 +190,9 @@ def remove_detectors(
         Stim circuit without detectors except the ones in ``det_ids_exception``.
     """
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
     if not isinstance(det_ids_exception, Sequence):
         raise TypeError(
             f"'det_ids_exception' is not a Sequence, but a {type(det_ids_exception)}."
@@ -229,7 +235,9 @@ def remove_observables(
         Stim circuit without observables except the ones in ``obs_ids_exception``.
     """
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
     if not isinstance(obs_ids_exception, Sequence):
         raise TypeError(
             f"'obs_ids_exception' is not a Sequence, but a {type(obs_ids_exception)}."
@@ -259,7 +267,9 @@ def observables_to_detectors(
     By default, converts all logical observables to detectors.
     It does not move the definition of the observables nor the detectors."""
     if not isinstance(circuit, stim.Circuit):
-        raise TypeError(f"'circuit' is not a stim.Circuit, but a {type(circuit)}.")
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
     if observables is None:
         observables = list(range(circuit.num_observables))
     if not isinstance(observables, Sequence):
@@ -298,11 +308,71 @@ def observables_to_detectors(
     return new_circuit
 
 
+def redefine_observables(
+    circuit: stim.Circuit, new_observables: dict[int, Sequence[int]]
+):
+    """
+    Redefines the observables in the circuit as XORs of the current observables.
+
+    Parameters
+    ----------
+    circuit
+        Stim circuit. The observables must be defined at the end of the circuit,
+        see ``qec_util.circuits.move_observables_to_end``.
+    new_observables
+        The indices of the new observables and their corresponding definition
+        in terms of list of current observables to XOR
+    """
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
+    circuit = circuit.flattened()
+    if not isinstance(new_observables, dict):
+        raise TypeError(
+            f"'new_observables' must be a dict, but {type(new_observables)} was given."
+        )
+    if any(not isinstance(o, int) for o in new_observables):
+        raise TypeError("All keys in 'new_observables' must be ints.")
+
+    obs_targets, k = {}, 0
+    for k, _ in enumerate(circuit):
+        if circuit[-k - 1].name != "OBSERVABLE_INCLUDE":
+            break
+        obs_id = circuit[-k - 1].gate_args_copy()[0]
+        # must accumulate targets in a list because observable definitions
+        # can be split accross the circuit.
+        if obs_id not in obs_targets:
+            obs_targets[obs_id] = []
+        obs_targets[obs_id] += circuit[-k - 1].targets_copy()
+
+    obs = set([o for os in new_observables.values() for o in os])
+    if set(obs_targets) < obs:
+        raise ValueError(
+            "Observables in 'new_observables' are not present at the end of 'circuit'."
+        )
+
+    new_obs_circuit = stim.Circuit()
+    for obs_id, old_observables in new_observables.items():
+        new_targets = [t for old_obs in old_observables for t in obs_targets[old_obs]]
+        new_instr = stim.CircuitInstruction(
+            "OBSERVABLE_INCLUDE", gate_args=[obs_id], targets=new_targets
+        )
+        new_obs_circuit.append(new_instr)
+
+    return circuit[:-k] + new_obs_circuit
+
+
 def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
     """
     Move all the observable definition to the end of the circuit
     while keeping their relative order.
     """
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
+
     new_circuit = stim.Circuit()
     obs = []
     # moving the definition of the observables messes with the rec[-i] definition

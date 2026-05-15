@@ -7,6 +7,7 @@ from qec_util.circuits import (
     move_first_resets_to_beginning,
     move_observables_to_end,
     observables_to_detectors,
+    redefine_observables,
     remove_detectors,
     remove_gauge_detectors,
     remove_non_native_instrs,
@@ -529,5 +530,54 @@ def test_remove_observables():
 
     with pytest.raises(TypeError):
         _ = remove_detectors(circuit, [1.2])
+
+    return
+
+
+def test_redefine_observables():
+    circuit = stim.Circuit(
+        """
+        M 0 1 2
+        OBSERVABLE_INCLUDE(0) Z0
+        OBSERVABLE_INCLUDE(1) rec[-1] rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-3]
+        """
+    )
+
+    new_circuit = redefine_observables(circuit, {5: [0, 1], 6: [1], 7: [0]})
+
+    expected_circuit = stim.Circuit(
+        """
+        M 0 1 2
+        OBSERVABLE_INCLUDE(5) rec[-3] Z0 rec[-1] rec[-2]
+        OBSERVABLE_INCLUDE(6) rec[-1] rec[-2]
+        OBSERVABLE_INCLUDE(7) rec[-3] Z0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit(
+        """
+        OBSERVABLE_INCLUDE(0) Z0
+        X 0
+        OBSERVABLE_INCLUDE(1) Z2
+        """
+    )
+
+    with pytest.raises(ValueError):
+        _ = redefine_observables(circuit, {0: [1, 0]})
+
+    new_circuit = redefine_observables(circuit, {0: [1]})
+
+    expected_circuit = stim.Circuit(
+        """
+        OBSERVABLE_INCLUDE(0) Z0
+        X 0
+        OBSERVABLE_INCLUDE(0) Z2
+        """
+    )
+
+    assert new_circuit == expected_circuit
 
     return

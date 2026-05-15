@@ -4,6 +4,7 @@ from .circuits import (
     move_first_resets_to_beginning,
     move_observables_to_end,
     observables_to_detectors,
+    redefine_observables,
     remove_detectors,
     remove_gauge_detectors,
     remove_non_native_instrs,
@@ -20,4 +21,5 @@ __all__ = [
     "format_to_rec_targets",
     "remove_non_native_instrs",
     "remove_observables",
+    "redefine_observables",
 ]
