@@ -4,6 +4,31 @@ import stim
 
 SQ_MEASUREMENTS = ["M", "MX", "MY", "MZ"]
 SQ_RESETS = ["R", "RX", "RY", "RZ"]
+ANNOTATIONS = [
+    "DETECTOR",
+    "MPAD",
+    "OBSERVABLE_INCLUDE",
+    "QUBIT_COORDS",
+    "SHIFT_COORDS",
+    "TICK",
+    "REPEAT",
+]
+NOISE_CHANNELS = [
+    "CORRELATED_ERROR",
+    "DEPOLARIZE1",
+    "DEPOLARIZE2",
+    "E",
+    "ELSE_CORRELATED_ERROR",
+    "HERALDED_ERASE",
+    "HERALDED_PAULI_CHANNEL_1",
+    "II_ERROR",
+    "I_ERROR",
+    "PAULI_CHANNEL_1",
+    "PAULI_CHANNEL_2",
+    "X_ERROR",
+    "Y_ERROR",
+    "Z_ERROR",
+]
 STIM_INSTRS = (
     ["I", "X", "Y", "Z"]
     + [
@@ -60,27 +85,11 @@ STIM_INSTRS = (
         "ZCY",
         "ZCZ",
     ]
-    + [
-        "CORRELATED_ERROR",
-        "DEPOLARIZE1",
-        "DEPOLARIZE2",
-        "E",
-        "ELSE_CORRELATED_ERROR",
-        "HERALDED_ERASE",
-        "HERALDED_PAULI_CHANNEL_1",
-        "II_ERROR",
-        "I_ERROR",
-        "PAULI_CHANNEL_1",
-        "PAULI_CHANNEL_2",
-        "X_ERROR",
-        "Y_ERROR",
-        "Z_ERROR",
-    ]
+    + NOISE_CHANNELS
     + ["M", "MR", "MRX", "MRY", "MRZ", "MX", "MY", "MZ", "R", "RX", "RY", "RZ"]
     + ["MXX", "MYY", "MZZ"]
     + ["MPP", "SPP", "SPP_DAG"]
-    + ["REPEAT"]
-    + ["DETECTOR", "MPAD", "OBSERVABLE_INCLUDE", "QUBIT_COORDS", "SHIFT_COORDS", "TICK"]
+    + ANNOTATIONS
 )
 
 
@@ -96,10 +105,10 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
 
     resets: dict[int, None | str] = {i: None for i in range(circuit.num_qubits)}
     for instr in circuit[::-1]:
+        if instr.name in ANNOTATIONS + NOISE_CHANNELS + ["I"]:
+            continue
         name = instr.name if instr.name in SQ_RESETS else None
         for q in instr.targets_copy():
-            if q.value < 0:  # corresponds to a rec[-k] from e.g. a detector definition
-                break
             resets[q.value] = name
 
     if any(r is None for r in resets.values()):
@@ -121,10 +130,11 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
         )
         new_circuit.append(new_instr)
 
-    # add remaining operations
+    # add remaining operations.
+    # remove noise before the reset
     missing_qubits = set(range(circuit.num_qubits))
     for instr in circuit:
-        if instr.name not in SQ_RESETS:
+        if instr.name not in SQ_RESETS + NOISE_CHANNELS + ["I"]:
             new_circuit.append(instr)
             continue
         if not missing_qubits:
@@ -135,10 +145,14 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
         new_targets = targets - missing_qubits
         if new_targets:
             new_instr = stim.CircuitInstruction(
-                name=instr.name, targets=[stim.GateTarget(t) for t in new_targets]
+                name=instr.name,
+                targets=[stim.GateTarget(t) for t in new_targets],
+                gate_args=instr.gate_args_copy(),
             )
             new_circuit.append(new_instr)
-        missing_qubits.difference_update(targets)
+
+        if instr.name in SQ_RESETS:
+            missing_qubits.difference_update(targets)
 
     return new_circuit
 

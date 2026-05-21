@@ -19,8 +19,13 @@ from qec_util.circuits import (
 def test_move_first_resets_to_beginning():
     circuit = stim.Circuit(
         """
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(0, 1) 1
+        X_ERROR(0.1) 0
+        I 0 1
         TICK
         R 0
+        Y_ERROR(0.1) 0 2
         RX 1
         X 0
         TICK
@@ -40,7 +45,10 @@ def test_move_first_resets_to_beginning():
         R 0
         RX 1
         RY 2
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(0, 1) 1
         TICK
+        Y_ERROR(0.1) 0
         X 0
         TICK
         TICK
@@ -79,6 +87,10 @@ def test_move_first_resets_to_beginning():
     with pytest.raises(ValueError):
         _ = move_first_resets_to_beginning(circuit)
 
+    circuit = stim.Circuit("I 0")
+
+    with pytest.raises(ValueError):
+        _ = move_first_resets_to_beginning(circuit)
     return
 
 
