@@ -28,6 +28,8 @@ def test_move_first_resets_to_beginning():
         TICK
         M 0
         R 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) Z0
         """
     )
 
@@ -44,6 +46,8 @@ def test_move_first_resets_to_beginning():
         TICK
         M 0
         R 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) Z0
         """
     )
 

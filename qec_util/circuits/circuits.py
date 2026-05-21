@@ -98,6 +98,8 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
     for instr in circuit[::-1]:
         name = instr.name if instr.name in SQ_RESETS else None
         for q in instr.targets_copy():
+            if q.value < 0:  # corresponds to a rec[-k] from e.g. a detector definition
+                break
             resets[q.value] = name
 
     if any(r is None for r in resets.values()):
