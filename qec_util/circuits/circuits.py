@@ -298,6 +298,7 @@ def observables_to_detectors(
         if obs in moved_observables:
             raise ValueError(
                 f"Observables cannot be defined in multiple lines, but L{obs} is."
+                "See 'qec_util.circuits.merge_observable_definitions'."
             )
         moved_observables.add(obs)
         new_instr = stim.CircuitInstruction(
@@ -362,6 +363,119 @@ def redefine_observables(
         new_obs_circuit.append(new_instr)
 
     return circuit[:-k] + new_obs_circuit
+
+
+def merge_observable_definitions(
+    circuit: stim.Circuit, observables: Sequence[int] | None = None
+) -> stim.Circuit:
+    """Merges the observable definitions so that there is a unique circuit
+    instruction for each (given) observable index."""
+    if not isinstance(circuit, stim.Circuit):
+        raise TypeError(
+            f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
+        )
+    if observables is None:
+        observables = list(range(circuit.num_observables))
+
+    blocks: list[stim.Circuit] = [stim.Circuit()]
+    pauli_obs: dict[int, list[int]] = {i: [] for i in observables}
+    prev_obs = False
+    for instr in circuit.flattened():
+        if instr.name != "OBSERVABLE_INCLUDE":
+            if prev_obs:
+                prev_obs = False
+                blocks.append(stim.Circuit())
+            blocks[-1].append(instr)
+            continue
+
+        if int(instr.gate_args_copy()[0]) not in observables:
+            if prev_obs:
+                prev_obs = False
+                blocks.append(stim.Circuit())
+            blocks[-1].append(instr)
+            continue
+
+        if not prev_obs:
+            prev_obs = True
+            blocks.append(stim.Circuit())
+        blocks[-1].append(instr)
+
+        if any(not t.is_measurement_record_target for t in instr.targets_copy()):
+            obs_ind = int(instr.gate_args_copy()[0])
+            pauli_obs[obs_ind].append(len(blocks) - 1)
+
+    if not prev_obs:  # end with obs block
+        blocks.append(stim.Circuit())
+
+    if any(len(i) >= 2 for i in pauli_obs.values()):
+        raise ValueError(
+            "Observable has two separate Pauli definitions that cannot be merged."
+        )
+    # no pauli observable defined, move to the end.
+    # pauli observable defined, move to pauli obs block (if possible)
+    obs_pos = {o: len(blocks) - 1 if v == [] else v[0] for o, v in pauli_obs.items()}
+
+    def move(instr: stim.CircuitInstruction, a: int, b: int) -> stim.CircuitInstruction:
+        # get meas target shift to change from block a to b
+        sign = +1
+        if a > b:
+            sign = -1
+            a, b = b, a
+        shift = sum([c.num_measurements for c in blocks[a : b + 1]])
+        shift *= sign
+
+        recs = [t.value - shift for t in instr.targets_copy()]
+        if any(t >= 0 for t in recs):
+            raise ValueError(
+                "Cannot merge a 'pauli' observable happening before a 'measurement' observable."
+            )
+        targets = [stim.target_rec(t) for t in recs]
+        new_instr = stim.CircuitInstruction(
+            "OBSERVABLE_INCLUDE", gate_args=instr.gate_args_copy(), targets=targets
+        )
+        return new_instr
+
+    for k, block in enumerate(blocks):
+        if k % 2 == 0:  # circuit block
+            continue
+
+        removed = []
+        for i, instr in enumerate(block):
+            obs_ind = int(instr.gate_args_copy()[0])
+            new_pos = obs_pos[obs_ind]
+            if new_pos == k:
+                continue
+
+            new_instr = move(instr, k, new_pos)
+
+            blocks[new_pos].append(new_instr)
+            removed.append(i)
+
+        for i in removed[::-1]:
+            blocks[k].pop(i)
+
+    # merge definitions in each block
+    for k, _ in enumerate(blocks):
+        if k % 2 == 0:
+            continue  # circuit block
+
+        obs_block = blocks[k]
+        obs_targets: dict[int, list[stim.GateTarget]] = {i: [] for i in observables}
+        for instr in obs_block:
+            obs_ind = int(instr.gate_args_copy()[0])
+            obs_targets[obs_ind] += instr.targets_copy()
+
+        new_block = stim.Circuit()
+        for ind, targets in obs_targets.items():
+            if targets == []:
+                continue
+            new_instr = stim.CircuitInstruction(
+                "OBSERVABLE_INCLUDE", gate_args=[ind], targets=targets
+            )
+            new_block.append(new_instr)
+        blocks[k] = new_block
+
+    return sum(blocks, start=stim.Circuit())
 
 
 def move_observables_to_end(circuit: stim.Circuit) -> stim.Circuit:
