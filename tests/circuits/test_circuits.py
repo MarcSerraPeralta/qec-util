@@ -25,6 +25,7 @@ def test_move_first_resets_to_beginning():
         I 0 1
         TICK
         R 0
+        Y_ERROR(0.1) 0 2
         RX 1
         X 0
         TICK
@@ -47,6 +48,7 @@ def test_move_first_resets_to_beginning():
         QUBIT_COORDS(0, 0) 0
         QUBIT_COORDS(0, 1) 1
         TICK
+        Y_ERROR(0.1) 0
         X 0
         TICK
         TICK

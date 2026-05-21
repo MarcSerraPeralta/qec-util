@@ -145,7 +145,9 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
         new_targets = targets - missing_qubits
         if new_targets:
             new_instr = stim.CircuitInstruction(
-                name=instr.name, targets=[stim.GateTarget(t) for t in new_targets]
+                name=instr.name,
+                targets=[stim.GateTarget(t) for t in new_targets],
+                gate_args=instr.gate_args_copy(),
             )
             new_circuit.append(new_instr)
 
