@@ -4,6 +4,7 @@ import stim
 from qec_util.circuits import (
     format_rec_targets,
     format_to_rec_targets,
+    merge_observable_definitions,
     move_first_resets_to_beginning,
     move_observables_to_end,
     observables_to_detectors,
@@ -616,5 +617,71 @@ def test_redefine_observables():
     )
 
     assert new_circuit == expected_circuit
+
+    return
+
+
+def test_merge_observable_definitions():
+    circuit = stim.Circuit(
+        """
+        M 0 1 2
+        OBSERVABLE_INCLUDE(1) rec[-3]
+        X 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1]
+        OBSERVABLE_INCLUDE(2) rec[-1]
+        X 0
+        OBSERVABLE_INCLUDE(0) Z0 Z1
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-3]
+        """
+    )
+
+    new_circuit = merge_observable_definitions(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        M 0 1 2
+        X 0
+        M 0
+        X 0
+        OBSERVABLE_INCLUDE(0) Z0 Z1 rec[-2] rec[-1] rec[-2]
+        M 0
+        OBSERVABLE_INCLUDE(1) rec[-5] rec[-2]
+        OBSERVABLE_INCLUDE(2) rec[-2]
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    new_circuit = merge_observable_definitions(circuit, observables=[0])
+
+    expected_circuit = stim.Circuit(
+        """
+        M 0 1 2
+        OBSERVABLE_INCLUDE(1) rec[-3]
+        X 0
+        M 0
+        OBSERVABLE_INCLUDE(1) rec[-1]
+        OBSERVABLE_INCLUDE(2) rec[-1]
+        X 0
+        OBSERVABLE_INCLUDE(0) Z0 Z1 rec[-2] rec[-1] rec[-2]
+        M 0
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
+    circuit = stim.Circuit(
+        """
+        OBSERVABLE_INCLUDE(0) Z0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        """
+    )
+
+    with pytest.raises(ValueError):
+        _ = merge_observable_definitions(circuit)
 
     return
