@@ -454,7 +454,7 @@ def merge_observable_definitions(
         for i in removed[::-1]:
             blocks[k].pop(i)
 
-    # merge definitions in each block and mwege
+    # merge definitions in each block
     for k, _ in enumerate(blocks):
         if k % 2 == 0:
             continue  # circuit block
