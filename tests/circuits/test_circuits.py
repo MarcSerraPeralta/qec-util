@@ -250,7 +250,7 @@ def test_observables_to_detectors():
         """
     )
 
-    new_circuit = observables_to_detectors(circuit)
+    new_circuit, obs_to_dets = observables_to_detectors(circuit)
 
     expected_circuit = stim.Circuit(
         """
@@ -269,10 +269,15 @@ def test_observables_to_detectors():
         DETECTOR(1) rec[-1]
         """
     )
+    expected_obs_to_dets = {
+        stim.DemTarget("L0"): stim.DemTarget("D3"),
+        stim.DemTarget("L1"): stim.DemTarget("D4"),
+    }
 
     assert new_circuit == expected_circuit
+    assert obs_to_dets == expected_obs_to_dets
 
-    new_circuit = observables_to_detectors(circuit, observables=[1])
+    new_circuit, obs_to_dets = observables_to_detectors(circuit, observables=[1])
 
     expected_circuit = stim.Circuit(
         """
@@ -291,8 +296,12 @@ def test_observables_to_detectors():
         DETECTOR(1) rec[-1]
         """
     )
+    expected_obs_to_dets = {
+        stim.DemTarget("L1"): stim.DemTarget("D3"),
+    }
 
     assert new_circuit == expected_circuit
+    assert obs_to_dets == expected_obs_to_dets
 
     circuit = stim.Circuit("OBSERVABLE_INCLUDE(0) Z0")
 

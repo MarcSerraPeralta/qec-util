@@ -280,10 +280,29 @@ def remove_observables(
 
 def observables_to_detectors(
     circuit: stim.Circuit, observables: Sequence[int] | None = None
-) -> stim.Circuit:
-    """Converts the (specified) logical observables of a circuit to detectors.
+) -> tuple[stim.Circuit, dict[stim.DemTarget, stim.DemTarget]]:
+    """
+    Converts the (specified) logical observables of a circuit to detectors.
     By default, converts all logical observables to detectors.
-    It does not move the definition of the observables nor the detectors."""
+    It does not move the definition of the observables nor the detectors.
+
+    Parameters
+    ----------
+    circuit
+        Stim circuit.
+    observables
+        Set of observable indices to convert to detectors.
+        By default, converts all observables to detectors.
+
+    Returns
+    -------
+    new_circuit
+        Stim circuit with the specified observables converted to detectors.
+    obs_to_dets
+        Mapping of the observable to the detector they have been converted to.
+        This is useful for reverting this conversion with
+        ``qec_util.dems.detectors_to_observables``.
+    """
     if not isinstance(circuit, stim.Circuit):
         raise TypeError(
             f"'circuit' must be a stim.Circuit, but {type(circuit)} was given."
@@ -298,8 +317,12 @@ def observables_to_detectors(
         raise ValueError("Elements in 'observables' must be valid observable indices.")
 
     new_circuit = stim.Circuit()
+    obs_to_dets: dict[stim.DemTarget, stim.DemTarget] = {}
     moved_observables = set()
+    curr_detector = 0
     for instr in circuit.flattened():
+        if instr.name == "DETECTOR":
+            curr_detector += 1
         if instr.name != "OBSERVABLE_INCLUDE":
             new_circuit.append(instr)
             continue
@@ -312,7 +335,7 @@ def observables_to_detectors(
             raise ValueError(
                 f"Targets in observable definition cannot be Paulis, but '{instr}' was found."
             )
-        obs = instr.gate_args_copy()[0]
+        obs = int(instr.gate_args_copy()[0])
         if obs in moved_observables:
             raise ValueError(
                 f"Observables cannot be defined in multiple lines, but L{obs} is."
@@ -323,8 +346,12 @@ def observables_to_detectors(
             "DETECTOR", gate_args=[obs], targets=targets
         )
         new_circuit.append(new_instr)
+        obs_to_dets[stim.target_logical_observable_id(obs)] = (
+            stim.target_relative_detector_id(curr_detector)
+        )
+        curr_detector += 1
 
-    return new_circuit
+    return new_circuit, obs_to_dets
 
 
 def redefine_observables(

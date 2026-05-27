@@ -4,7 +4,6 @@ import stim
 
 from qec_util.dems import (
     contains_only_edges,
-    convert_observables_to_detectors,
     dem_difference,
     detectors_to_observables,
     disjoint_graphs,
@@ -13,6 +12,7 @@ from qec_util.dems import (
     get_flippable_observables,
     get_max_weight_hyperedge,
     is_instr_in_dem,
+    observables_to_detectors,
     only_errors,
     prepare_distance2_dem_for_pymatching,
     remove_fake_errors,
@@ -269,7 +269,7 @@ def test_contains_only_edges():
     return
 
 
-def test_convert_observables_to_detectors():
+def test_observables_to_detectors():
     dem = stim.DetectorErrorModel(
         """
         error(1) D2 D3 L0
@@ -279,7 +279,7 @@ def test_convert_observables_to_detectors():
         """
     )
 
-    new_dem = convert_observables_to_detectors(dem, [0], [123])
+    new_dem = observables_to_detectors(dem, [0], [123])
 
     expected_dem = stim.DetectorErrorModel(
         """
@@ -300,7 +300,7 @@ def test_convert_observables_to_detectors():
         """
     )
 
-    new_dem = convert_observables_to_detectors(dem)
+    new_dem = observables_to_detectors(dem)
 
     expected_dem = stim.DetectorErrorModel(
         """
