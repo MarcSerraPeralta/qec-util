@@ -82,6 +82,25 @@ def test_move_first_resets_to_beginning():
 
     assert new_circuit == expected_circuit
 
+    circuit = stim.Circuit(
+        """
+        R 2 3 4 5 6 7
+        DEPOLARIZE2(0.1) 2 7 3 6 5 4 0 1
+        R 0 1
+        """
+    )
+
+    new_circuit = move_first_resets_to_beginning(circuit)
+
+    expected_circuit = stim.Circuit(
+        """
+        R 0 1 2 3 4 5 6 7
+        DEPOLARIZE2(0.1) 2 7 3 6 5 4
+        """
+    )
+
+    assert new_circuit == expected_circuit
+
     circuit = stim.Circuit("X 0")
 
     with pytest.raises(ValueError):

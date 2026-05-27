@@ -105,10 +105,14 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
 
     resets: dict[int, None | str] = {i: None for i in range(circuit.num_qubits)}
     for instr in circuit[::-1]:
+        # avoid annotations, noise channels, and identity,
+        # as they do not count as "physical operation".
         if instr.name in ANNOTATIONS + NOISE_CHANNELS + ["I"]:
             continue
         name = instr.name if instr.name in SQ_RESETS else None
         for q in instr.targets_copy():
+            if q.value < 0:  # corresponds to a rec[-k] from e.g. a detector definition
+                break
             resets[q.value] = name
 
     if any(r is None for r in resets.values()):
@@ -131,7 +135,8 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
         new_circuit.append(new_instr)
 
     # add remaining operations.
-    # remove noise before the reset
+    # remove noise before the reset.
+    # keep ordering of noise as it is important for e.g. DEPOLARIZE2.
     missing_qubits = set(range(circuit.num_qubits))
     for instr in circuit:
         if instr.name not in SQ_RESETS + NOISE_CHANNELS + ["I"]:
@@ -141,18 +146,15 @@ def move_first_resets_to_beginning(circuit: stim.Circuit) -> stim.Circuit:
             new_circuit.append(instr)
             continue
 
-        targets = set([t.value for t in instr.targets_copy()])
-        new_targets = targets - missing_qubits
+        new_targets = [t for t in instr.targets_copy() if t.value not in missing_qubits]
         if new_targets:
             new_instr = stim.CircuitInstruction(
-                name=instr.name,
-                targets=[stim.GateTarget(t) for t in new_targets],
-                gate_args=instr.gate_args_copy(),
+                name=instr.name, targets=new_targets, gate_args=instr.gate_args_copy()
             )
             new_circuit.append(new_instr)
 
         if instr.name in SQ_RESETS:
-            missing_qubits.difference_update(targets)
+            missing_qubits.difference_update([t.value for t in instr.targets_copy()])
 
     return new_circuit
 
