@@ -1,7 +1,6 @@
 from ..dem_instrs import get_labels_from_detectors
 from .dems import (
     contains_only_edges,
-    convert_observables_to_detectors,
     dem_difference,
     detectors_to_observables,
     disjoint_graphs,
@@ -10,6 +9,7 @@ from .dems import (
     get_flippable_observables,
     get_max_weight_hyperedge,
     is_instr_in_dem,
+    observables_to_detectors,
     only_errors,
     prepare_distance2_dem_for_pymatching,
     remove_fake_errors,
@@ -31,7 +31,7 @@ __all__ = [
     "get_flippable_detectors",
     "get_flippable_observables",
     "contains_only_edges",
-    "convert_observables_to_detectors",
+    "observables_to_detectors",
     "get_errors_triggering_detectors",
     "only_errors",
     "remove_hyperedges",

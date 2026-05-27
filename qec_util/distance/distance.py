@@ -6,8 +6,8 @@ import numpy.typing as npt
 import stim
 
 from ..dems import (
-    convert_observables_to_detectors,
     get_errors_triggering_detectors,
+    observables_to_detectors,
     only_errors,
 )
 
@@ -103,9 +103,7 @@ def get_circuit_distance_observable(
     dem = dem.flattened()
     dem = only_errors(dem)
     obs_det_inds = [dem.num_detectors + i for i, _ in enumerate(obs_inds)]
-    new_dem = convert_observables_to_detectors(
-        dem, obs_inds=obs_inds, det_inds=obs_det_inds
-    )
+    new_dem = observables_to_detectors(dem, obs_inds=obs_inds, det_inds=obs_det_inds)
     det_support = get_errors_triggering_detectors(new_dem)
 
     # define model
@@ -200,7 +198,7 @@ def get_upper_bound_circuit_distance(
         raise ValueError("'dem' does not contain any logical observable.")
 
     dem = dem.flattened()
-    new_dem = convert_observables_to_detectors(dem)
+    new_dem = observables_to_detectors(dem)
     decoder_dem = decoder(new_dem, **kargs)
 
     num_faults: int = np.inf

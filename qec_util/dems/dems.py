@@ -253,7 +253,7 @@ def contains_only_edges(dem: stim.DetectorErrorModel) -> bool:
     return True
 
 
-def convert_observables_to_detectors(
+def observables_to_detectors(
     dem: stim.DetectorErrorModel,
     obs_inds: Sequence[int] | None = None,
     det_inds: Sequence[int] | None = None,
