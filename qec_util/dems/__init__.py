@@ -4,6 +4,7 @@ from .dems import (
     dem_difference,
     detectors_to_observables,
     disjoint_graphs,
+    get_dem_subgraph,
     get_errors_triggering_detectors,
     get_flippable_detectors,
     get_flippable_observables,
@@ -42,4 +43,5 @@ __all__ = [
     "decomposed_graphlike_dem",
     "remove_fake_errors",
     "detectors_to_observables",
+    "get_dem_subgraph",
 ]
