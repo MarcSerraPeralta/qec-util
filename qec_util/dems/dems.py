@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 
 import numpy as np
 import stim
@@ -622,5 +622,48 @@ def detectors_to_observables(
                 new_dem.append(instr)
         else:
             new_dem.append(instr)
+
+    return new_dem
+
+
+def get_dem_subgraph(
+    dem: stim.DetectorErrorModel, dets: Collection[int]
+) -> stim.DetectorErrorModel:
+    """Returns the DEM subgraph corresponding to only taking the specified
+    detectors from the given DEM. Does not shift the detector indices."""
+    if not isinstance(dem, stim.DetectorErrorModel):
+        raise TypeError(
+            f"'dem' must be a stim.DetectorErrorModel, but {type(dem)} was given."
+        )
+    if not isinstance(dets, Collection):
+        raise TypeError(f"'dets' must be a set, but {type(dets)} was given.")
+    if any(not isinstance(d, int) for d in dets):
+        raise TypeError("Elements in 'dets' must be integers.")
+
+    # faster checking in target is in 'dets'
+    dets = set(dets)
+
+    new_dem = stim.DetectorErrorModel()
+    for instr in dem.flattened():
+        if instr.type != "error":
+            new_dem.append(instr)
+            continue
+
+        new_targets = [
+            t
+            for t in instr.targets_copy()
+            if t.is_logical_observable_id()
+            or (t.is_relative_detector_id() and t.val in dets)
+            or t.is_separator()
+        ]
+
+        # remove empty instructions
+        if not new_targets:
+            continue
+
+        new_instr = stim.DemInstruction(
+            "error", targets=new_targets, args=instr.args_copy()
+        )
+        new_dem.append(new_instr)
 
     return new_dem

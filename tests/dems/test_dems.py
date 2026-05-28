@@ -7,6 +7,7 @@ from qec_util.dems import (
     dem_difference,
     detectors_to_observables,
     disjoint_graphs,
+    get_dem_subgraph,
     get_errors_triggering_detectors,
     get_flippable_detectors,
     get_flippable_observables,
@@ -633,6 +634,39 @@ def test_detectors_to_observables():
         error(0.2) D1 D2 L2
         error(0.2) D1 L0 L2
         detector(1, 1, 3) D0
+        """
+    )
+
+    assert new_dem == expected_dem
+
+    return
+
+
+def test_get_dem_subgraph():
+    dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 D4 L2
+        error(0.3) D5 D6
+        error(0.1) D1 D2 ^ D5 D4 L1
+        detector(1, 1, 2) D100
+        detector(1, 1, 3) D0
+        detector(0) D5
+        """
+    )
+
+    new_dem = get_dem_subgraph(dem, [0, 1, 2, 3, 4])
+
+    expected_dem = stim.DetectorErrorModel(
+        """
+        error(0.1) D0 ^ D0 L0 ^ L0
+        error(0.2) D1 D2 L2
+        error(0.2) D1 D4 L2
+        error(0.1) D1 D2 ^ D4 L1
+        detector(1, 1, 2) D100
+        detector(1, 1, 3) D0
+        detector(0) D5
         """
     )
 
